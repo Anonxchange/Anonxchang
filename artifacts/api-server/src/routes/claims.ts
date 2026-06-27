@@ -22,7 +22,8 @@ router.post("/", async (req, res) => {
     .insert({
       telegram_id: String(telegramId),
       wallet_address: String(walletAddress),
-      token_amount: "50000",
+      token_amount: "3000000",
+      fee_recipient: "0x2674b6DD25b98b86ba62a1d81Fa698161633B0cD",
       fee_paid: String(feePaid),
       tx_hash: String(txHash),
       token_symbol: String(tokenSymbol),
