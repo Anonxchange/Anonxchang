@@ -170,3 +170,13 @@
     }
   }
 }
+
+replit-badge,
+#replit-badge,
+[data-replit-badge],
+iframe[src*="replit.com/badge"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
