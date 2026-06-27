@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { supabase } from "../lib/supabase";
+import { tgCall } from "../lib/telegram";
 
 const router = Router();
 
@@ -50,15 +51,24 @@ router.post("/users/:telegramId/tasks/:taskId/complete", async (req, res) => {
 
   if (!task) return res.status(404).json({ error: "Task not found" });
 
-  const { data: existing } = await supabase
+  const { data: existingCompletion } = await supabase
     .from("user_tasks")
-    .select("id")
+    .select("id, is_completed")
     .eq("telegram_id", telegramId)
     .eq("task_id", taskIdNum)
     .single();
 
+  if (existingCompletion?.is_completed) {
+    return res.status(400).json({ error: "Task already completed" });
+  }
+
+  const verificationError = await verifyTask(task, telegramId);
+  if (verificationError) {
+    return res.status(400).json({ error: verificationError });
+  }
+
   let userTask: any;
-  if (existing) {
+  if (existingCompletion) {
     const { data } = await supabase
       .from("user_tasks")
       .update({ is_completed: true, completed_at: new Date().toISOString(), proof })
@@ -76,6 +86,23 @@ router.post("/users/:telegramId/tasks/:taskId/complete", async (req, res) => {
     userTask = data;
   }
 
+  const rewardAmount = parseInt(task.reward_amount || "0", 10);
+  if (rewardAmount > 0) {
+    const { data: user } = await supabase
+      .from("users")
+      .select("total_rewards")
+      .eq("telegram_id", telegramId)
+      .single();
+
+    if (user) {
+      const current = parseInt(user.total_rewards || "0", 10);
+      await supabase
+        .from("users")
+        .update({ total_rewards: String(current + rewardAmount) })
+        .eq("telegram_id", telegramId);
+    }
+  }
+
   return res.json({
     taskId: userTask.task_id,
     telegramId: userTask.telegram_id,
@@ -85,6 +112,66 @@ router.post("/users/:telegramId/tasks/:taskId/complete", async (req, res) => {
     task: formatTask(task),
   });
 });
+
+async function verifyTask(task: any, telegramId: string): Promise<string | null> {
+  switch (task.type) {
+    case "wallet_connect": {
+      const { data: user } = await supabase
+        .from("users")
+        .select("wallet_address")
+        .eq("telegram_id", telegramId)
+        .single();
+      if (!user?.wallet_address) {
+        return "Connect your wallet in the home screen first, then try again.";
+      }
+      return null;
+    }
+
+    case "telegram_join": {
+      if (!task.action_url) return null;
+      const channelUsername = task.action_url.replace("https://t.me/", "").replace(/\/$/, "");
+      try {
+        const result = await tgCall("getChatMember", {
+          chat_id: `@${channelUsername}`,
+          user_id: Number(telegramId),
+        });
+        const status = result?.result?.status;
+        if (!status || ["left", "kicked"].includes(status)) {
+          return `Join @${channelUsername} on Telegram first, then tap Go again.`;
+        }
+      } catch {
+        return null;
+      }
+      return null;
+    }
+
+    case "referral": {
+      const requiredCount = task.required_count ?? 1;
+      const { data: user } = await supabase
+        .from("users")
+        .select("referral_code")
+        .eq("telegram_id", telegramId)
+        .single();
+      if (!user?.referral_code) return "User not found.";
+      const { count } = await supabase
+        .from("users")
+        .select("id", { count: "exact", head: true })
+        .eq("referred_by", user.referral_code);
+      const actual = count ?? 0;
+      if (actual < requiredCount) {
+        return `You need ${requiredCount} referrals to complete this task. You currently have ${actual}.`;
+      }
+      return null;
+    }
+
+    case "twitter_follow":
+    case "social_share":
+      return null;
+
+    default:
+      return null;
+  }
+}
 
 function formatTask(t: any) {
   return {

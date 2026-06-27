@@ -40,19 +40,21 @@ export default function Tasks() {
   const handleCompleteTask = (taskId: number, actionUrl?: string | null) => {
     if (actionUrl) window.open(actionUrl, '_blank');
     setCompletingTaskId(taskId);
+    const delay = actionUrl ? 3000 : 0;
     setTimeout(() => {
       completeTask.mutate({ telegramId, taskId, data: {} }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
-          toast.success("Task completed! Reward added to your allocation.");
+          toast.success("Task verified! Reward added to your allocation.");
           setCompletingTaskId(null);
         },
-        onError: () => {
-          toast.error("Could not verify task completion.");
+        onError: (err: any) => {
+          const msg = err?.response?.data?.error || err?.message || "Could not verify task completion.";
+          toast.error(msg);
           setCompletingTaskId(null);
         }
       });
-    }, 2000);
+    }, delay);
   };
 
   const isCompleted = (taskId: number) => {
