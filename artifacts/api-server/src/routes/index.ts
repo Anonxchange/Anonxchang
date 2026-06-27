@@ -8,6 +8,7 @@ import tokensRouter from "./tokens";
 import statsRouter from "./stats";
 import telegramRouter from "./telegram";
 import leaderboardRouter from "./leaderboard";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
@@ -21,5 +22,6 @@ router.use("/tokens", tokensRouter);
 router.use("/stats", statsRouter);
 router.use("/telegram", telegramRouter);
 router.use("/leaderboard", leaderboardRouter);
+router.use("/notifications", notificationsRouter);
 
 export default router;

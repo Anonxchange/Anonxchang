@@ -1,7 +1,7 @@
 import { useTelegram } from "@/components/TelegramProvider";
 import { useGetGlobalStats, useGetUserClaim, useSubmitClaim, useUpdateWallet } from "@workspace/api-client-react";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
-import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt, useBalance } from "wagmi";
 import { parseEther } from "viem";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -56,6 +56,8 @@ export default function Home() {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const countdown = useCountdown(CLAIM_DEADLINE);
+
+  const { data: bnbBalance } = useBalance({ address, query: { enabled: !!address } });
 
   const { data: stats, isLoading: statsLoading } = useGetGlobalStats();
   const { data: claimStatus } = useGetUserClaim(telegramId, {
@@ -225,24 +227,38 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-green-600">
-                  <Wallet className="w-5 h-5" />
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-green-600">
+                    <Wallet className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Connected Wallet</div>
+                    <div className="font-mono text-sm font-semibold">{address?.slice(0, 6)}...{address?.slice(-4)}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Connected Wallet</div>
-                  <div className="font-mono text-sm font-semibold">{address?.slice(0, 6)}...{address?.slice(-4)}</div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(address || ""); toast.success("Copied!"); }}
+                    className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                  >
+                    <Copy className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <Button variant="outline" size="sm" onClick={() => disconnect()} className="text-xs">Disconnect</Button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => { navigator.clipboard.writeText(address || ""); toast.success("Copied!"); }}
-                  className="p-2 rounded-lg hover:bg-secondary transition-colors"
-                >
-                  <Copy className="w-4 h-4 text-muted-foreground" />
-                </button>
-                <Button variant="outline" size="sm" onClick={() => disconnect()} className="text-xs">Disconnect</Button>
+              {/* BNB Balance */}
+              <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-100">
+                <div className="flex items-center gap-2">
+                  <img src="https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png" alt="BNB" className="w-5 h-5 rounded-full" />
+                  <span className="text-xs text-amber-700 font-semibold">BNB Balance</span>
+                </div>
+                <span className="font-black text-sm text-amber-800">
+                  {bnbBalance
+                    ? `${parseFloat(bnbBalance.formatted).toFixed(4)} BNB`
+                    : "Loading..."}
+                </span>
               </div>
             </div>
           )}

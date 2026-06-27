@@ -6,10 +6,14 @@ import {
   Drawer, DrawerClose, DrawerContent,
   DrawerHeader, DrawerTitle,
 } from "@/components/ui/drawer";
-import { Users, Calendar, ArrowUpRight, Globe, Layers, Coins, Clock, CheckCircle2, Hourglass } from "lucide-react";
+import { Users, Calendar, ArrowUpRight, Globe, Layers, Coins, Clock, CheckCircle2, Hourglass, Bell, BellOff } from "lucide-react";
 import { FaTelegram } from "react-icons/fa";
 import { useState } from "react";
+import { toast } from "sonner";
+import { useTelegram } from "@/components/TelegramProvider";
 import type { AirdropToken } from "@workspace/api-client-react";
+
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 const tokenLogos: Record<string, string> = {
   ETH:  "https://assets.coingecko.com/coins/images/279/small/ethereum.png",
@@ -21,7 +25,6 @@ const tokenLogos: Record<string, string> = {
   NOVA: "https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png",
 };
 
-// Static coming-soon tokens shown regardless of DB
 const COMING_SOON_TOKENS: AirdropToken[] = [
   {
     id: -1,
@@ -146,7 +149,15 @@ function StatusBadge({ status }: { status: "active" | "coming_soon" | "ended" })
   );
 }
 
-function TokenDetailDrawer({ token, open, onClose }: { token: AirdropToken | null; open: boolean; onClose: () => void }) {
+function TokenDetailDrawer({
+  token, open, onClose, notified, onNotify,
+}: {
+  token: AirdropToken | null;
+  open: boolean;
+  onClose: () => void;
+  notified: boolean;
+  onNotify: (symbol: string) => void;
+}) {
   if (!token) return null;
   const status = token.symbol === "NOVA" ? "active" : getStatus(token);
   const logo = tokenLogos[token.symbol] || token.logoUrl;
@@ -156,7 +167,6 @@ function TokenDetailDrawer({ token, open, onClose }: { token: AirdropToken | nul
     <Drawer open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DrawerContent className="bg-white border-border max-h-[90vh] overflow-y-auto">
         <DrawerHeader className="pb-0">
-          {/* Token identity */}
           <div className="flex items-center gap-4 mb-4">
             <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-border shadow flex-shrink-0 bg-secondary">
               <img src={logo} alt={token.symbol} className="w-full h-full object-cover"
@@ -175,7 +185,6 @@ function TokenDetailDrawer({ token, open, onClose }: { token: AirdropToken | nul
             </div>
           </div>
 
-          {/* Airdrop status banner */}
           {status === "active" && (
             <div className="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-200 mb-4">
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
@@ -208,12 +217,10 @@ function TokenDetailDrawer({ token, open, onClose }: { token: AirdropToken | nul
         </DrawerHeader>
 
         <div className="px-4 pb-6 flex flex-col gap-4">
-          {/* Description */}
           {token.description && (
             <p className="text-sm text-muted-foreground leading-relaxed">{token.description}</p>
           )}
 
-          {/* Stats grid */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-xl bg-secondary flex flex-col gap-1">
               <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
@@ -243,14 +250,12 @@ function TokenDetailDrawer({ token, open, onClose }: { token: AirdropToken | nul
             </div>
           </div>
 
-          {/* Gas fee note */}
           {token.feeRequired && Number(token.feeRequired) > 0 && (
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-100 text-xs text-amber-800">
-              <span className="font-bold">Network fee required:</span> A standard blockchain gas fee will be charged when claiming. The exact amount depends on network congestion at the time of claim.
+              <span className="font-bold">Network fee required:</span> A standard blockchain gas fee will be charged when claiming.
             </div>
           )}
 
-          {/* Action buttons */}
           <div className="flex flex-col gap-2 mt-1">
             {status === "active" && token.symbol === "NOVA" ? (
               <a href="https://t.me/Airdropperxbot" target="_blank" rel="noopener noreferrer">
@@ -264,9 +269,16 @@ function TokenDetailDrawer({ token, open, onClose }: { token: AirdropToken | nul
                 Claim Airdrop
               </Button>
             ) : status === "coming_soon" ? (
-              <Button variant="outline" className="w-full h-11 border-amber-200 text-amber-700 hover:bg-amber-50" disabled>
-                <Hourglass className="mr-2 w-4 h-4" />
-                Coming Soon
+              <Button
+                className={`w-full h-11 border-0 ${notified ? "bg-green-100 text-green-700 hover:bg-green-100" : "bg-amber-500 hover:bg-amber-600 text-white"}`}
+                onClick={() => !notified && onNotify(token.symbol)}
+                disabled={notified}
+              >
+                {notified ? (
+                  <><BellOff className="mr-2 w-4 h-4" /> Notified — We'll alert you</>
+                ) : (
+                  <><Bell className="mr-2 w-4 h-4" /> Notify Me When Live</>
+                )}
               </Button>
             ) : (
               <Button variant="outline" className="w-full h-11" disabled>
@@ -295,7 +307,9 @@ function TokenDetailDrawer({ token, open, onClose }: { token: AirdropToken | nul
 
 export default function Tokens() {
   const { data: dbTokens, isLoading } = useListTokens();
+  const { telegramId } = useTelegram();
   const [selected, setSelected] = useState<AirdropToken | null>(null);
+  const [notifiedSymbols, setNotifiedSymbols] = useState<Set<string>>(new Set());
 
   const novaToken: AirdropToken = {
     id: 0,
@@ -314,6 +328,24 @@ export default function Tokens() {
     isFeatured: true,
   };
 
+  const handleNotify = async (symbol: string) => {
+    if (!telegramId) {
+      toast.error("Open this app inside Telegram to enable notifications.");
+      return;
+    }
+    try {
+      await fetch(`${API_BASE}/notifications/token-notify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ telegramId, tokenSymbol: symbol }),
+      });
+      setNotifiedSymbols(prev => new Set([...prev, symbol]));
+      toast.success(`You'll be notified when the ${symbol} airdrop goes live!`);
+    } catch {
+      toast.error("Could not save notification preference. Try again.");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4 p-4 md:p-8 max-w-2xl mx-auto w-full">
@@ -326,7 +358,6 @@ export default function Tokens() {
     );
   }
 
-  // Merge DB tokens (excluding NOVA) with static coming-soon list
   const dbOther = (dbTokens ?? []).filter(t => t.symbol !== "NOVA");
   const dbSymbols = new Set(dbOther.map(t => t.symbol));
   const staticTokens = COMING_SOON_TOKENS.filter(t => !dbSymbols.has(t.symbol));
@@ -335,13 +366,12 @@ export default function Tokens() {
   return (
     <div className="flex flex-col gap-5 p-4 md:p-8 max-w-2xl mx-auto w-full">
 
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-black tracking-tight mb-1 neon-text">Discover Airdrops</h1>
         <p className="text-muted-foreground text-sm">Curated token distribution events — live & upcoming.</p>
       </div>
 
-      {/* Featured NOVA banner — tappable */}
+      {/* Featured NOVA */}
       <button
         onClick={() => setSelected(novaToken)}
         className="w-full text-left hero-gradient rounded-2xl p-5 text-white flex items-center gap-4 shadow-md hover:opacity-95 transition-opacity"
@@ -362,25 +392,25 @@ export default function Tokens() {
         </div>
       </button>
 
-      {/* Coming soon label */}
+      {/* Coming soon section header */}
       <div className="flex items-center gap-2">
         <Hourglass className="w-3.5 h-3.5 text-amber-500" />
         <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Coming Soon</span>
         <div className="flex-1 h-px bg-amber-100" />
       </div>
 
-      {/* Other token cards grid */}
+      {/* Token grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {allOtherTokens.map(token => {
           const status = getStatus(token);
           const logo = tokenLogos[token.symbol] || token.logoUrl;
+          const isNotified = notifiedSymbols.has(token.symbol);
           return (
             <Card
               key={token.id}
               className="glass-card overflow-hidden flex flex-col hover:shadow-md hover:border-amber-100 transition-all cursor-pointer"
               onClick={() => setSelected(token)}
             >
-              {/* Banner */}
               <div className="h-14 relative w-full bg-gradient-to-br from-amber-50 to-orange-50 border-b border-border/50">
                 <div className="absolute top-2 right-2">
                   <StatusBadge status={status} />
@@ -388,7 +418,6 @@ export default function Tokens() {
               </div>
 
               <CardContent className="p-3 flex-1 flex flex-col relative pt-0">
-                {/* Logo */}
                 <div className="w-11 h-11 rounded-full bg-white border-2 border-border absolute -top-5 left-3 overflow-hidden shadow-md">
                   <img src={logo} alt={token.symbol} className="w-full h-full rounded-full object-cover"
                     onError={(e) => { (e.target as HTMLImageElement).src = `https://placehold.co/44x44/6366f1/white?text=${token.symbol[0]}`; }}
@@ -410,9 +439,20 @@ export default function Tokens() {
                     </div>
                   </div>
 
-                  <Button variant="ghost" size="sm" className="w-full mt-2 h-7 text-xs text-amber-600 hover:bg-amber-50 hover:text-amber-700 border border-amber-100">
-                    Details <ArrowUpRight className="w-3 h-3 ml-1" />
-                  </Button>
+                  {isNotified ? (
+                    <div className="w-full mt-2 h-7 flex items-center justify-center gap-1 text-xs text-green-600 font-semibold bg-green-50 rounded border border-green-200">
+                      <BellOff className="w-3 h-3" /> Notified
+                    </div>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full mt-2 h-7 text-xs text-amber-600 hover:bg-amber-50 hover:text-amber-700 border border-amber-100"
+                      onClick={(e) => { e.stopPropagation(); setSelected(token); }}
+                    >
+                      Details <ArrowUpRight className="w-3 h-3 ml-1" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -420,11 +460,12 @@ export default function Tokens() {
         })}
       </div>
 
-      {/* Detail drawer */}
       <TokenDetailDrawer
         token={selected}
         open={!!selected}
         onClose={() => setSelected(null)}
+        notified={selected ? notifiedSymbols.has(selected.symbol) : false}
+        onNotify={handleNotify}
       />
     </div>
   );
