@@ -149,9 +149,9 @@ export default function Home() {
               <div className="text-white/70 text-xs mt-0.5">NOVA tokens</div>
             </div>
             <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-              <div className="text-white/60 text-xs mb-1 uppercase tracking-wider">Est. Value</div>
+              <div className="text-white/60 text-xs mb-1 uppercase tracking-wider">Claim Value</div>
               <div className="text-white font-black text-2xl">{estimatedUSD}</div>
-              <div className="text-white/70 text-xs mt-0.5">at listing price</div>
+              <div className="text-white/70 text-xs mt-0.5">at current price</div>
             </div>
           </div>
 
@@ -246,7 +246,7 @@ export default function Home() {
             Claim NOVA Tokens
           </CardTitle>
           <CardDescription className="text-xs">
-            A gas fee of {GAS_FEE_BNB} BNB is required to process your claim. Deadline: <strong>July 25, 2026</strong>.
+            A network fee of {GAS_FEE_BNB} BNB (~$2.82) is required to process your claim. Deadline: <strong>July 25, 2026</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
@@ -288,9 +288,9 @@ export default function Home() {
                     <span className="text-muted-foreground text-sm">Your Allocation</span>
                     <span className="font-black text-lg text-indigo-600">900,000 NOVA</span>
                   </div>
-                  {/* Est value */}
+                  {/* Claim value */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl">
-                    <span className="text-muted-foreground text-sm">Est. Value</span>
+                    <span className="text-muted-foreground text-sm">Claim Value</span>
                     <span className="font-semibold">{estimatedUSD}</span>
                   </div>
                   {/* Deadline */}
@@ -301,7 +301,10 @@ export default function Home() {
                   {/* Network fee */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl">
                     <span className="text-muted-foreground text-sm">Network Fee</span>
-                    <span className="font-semibold">{GAS_FEE_BNB} BNB</span>
+                    <div className="text-right">
+                      <div className="font-semibold">{GAS_FEE_BNB} BNB</div>
+                      <div className="text-xs text-muted-foreground">≈ $2.82</div>
+                    </div>
                   </div>
                   {/* Wallet */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl border border-primary/20">

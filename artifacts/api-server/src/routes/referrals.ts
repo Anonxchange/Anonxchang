@@ -23,7 +23,7 @@ router.get("/:telegramId", async (req, res) => {
     (r: any) => r.claim_status === "fee_paid" || r.claim_status === "claimed"
   );
 
-  const botUsername = process.env.TELEGRAM_BOT_USERNAME || "your_bot";
+  const botUsername = process.env.BOT_USERNAME || "Airdropperxbot";
 
   return res.json({
     telegramId,

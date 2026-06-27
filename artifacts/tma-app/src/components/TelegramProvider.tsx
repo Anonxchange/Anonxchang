@@ -6,12 +6,14 @@ interface TelegramContextType {
   telegramId: string;
   user: any | null;
   isLoading: boolean;
+  tgUser: { username?: string; firstName?: string; lastName?: string } | null;
 }
 
 const TelegramContext = createContext<TelegramContextType | undefined>(undefined);
 
 export function TelegramProvider({ children }: { children: React.ReactNode }) {
-  const [telegramId, setTelegramId] = useState<string>("demo_user_123");
+  const [telegramId, setTelegramId] = useState<string>("");
+  const [tgUser, setTgUser] = useState<{ username?: string; firstName?: string; lastName?: string } | null>(null);
   const queryClient = useQueryClient();
   const didRegister = useRef(false);
 
@@ -22,6 +24,11 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       const initDataUnsafe = window.Telegram.WebApp.initDataUnsafe;
       if (initDataUnsafe?.user?.id) {
         setTelegramId(initDataUnsafe.user.id.toString());
+        setTgUser({
+          username: initDataUnsafe.user.username,
+          firstName: initDataUnsafe.user.first_name,
+          lastName: initDataUnsafe.user.last_name,
+        });
       }
     }
   }, []);
@@ -42,9 +49,9 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       registerUser.mutate({
         data: {
           telegramId,
-          username: "demouser",
-          firstName: "Demo",
-          lastName: "User",
+          username: tgUser?.username ?? null,
+          firstName: tgUser?.firstName ?? null,
+          lastName: tgUser?.lastName ?? null,
         }
       }, {
         onSuccess: () => {
@@ -58,7 +65,7 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   }, [isLoading, user, telegramId, isError]);
 
   return (
-    <TelegramContext.Provider value={{ telegramId, user: user ?? null, isLoading }}>
+    <TelegramContext.Provider value={{ telegramId, user: user ?? null, isLoading, tgUser }}>
       {children}
     </TelegramContext.Provider>
   );

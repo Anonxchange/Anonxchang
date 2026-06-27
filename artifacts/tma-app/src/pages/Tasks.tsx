@@ -1,5 +1,5 @@
 import { useTelegram } from "@/components/TelegramProvider";
-import { useListTasks, useGetUserTasks, useCompleteTask, getGetUserTasksQueryKey } from "@workspace/api-client-react";
+import { useListTasks, useGetUserTasks, useCompleteTask, useGetReferralStats, getGetUserTasksQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,8 +34,14 @@ export default function Tasks() {
   const { data: userTasks, isLoading: userTasksLoading } = useGetUserTasks(telegramId, {
     query: { enabled: !!telegramId }
   });
+  const { data: referralStats } = useGetReferralStats(telegramId, {
+    query: { enabled: !!telegramId }
+  });
 
   const completeTask = useCompleteTask();
+
+  const MAX_REFERRALS = 10;
+  const qualifiedReferrals = referralStats?.qualifiedReferrals ?? 0;
 
   const handleCompleteTask = (taskId: number, actionUrl?: string | null) => {
     if (actionUrl) window.open(actionUrl, '_blank');
@@ -110,7 +116,7 @@ export default function Tasks() {
               </div>
             </div>
             <div className="px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-bold border border-violet-200">
-              0 / 10
+              {qualifiedReferrals} / {MAX_REFERRALS}
             </div>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
