@@ -5,13 +5,13 @@ import { mainnet } from 'wagmi/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 
-const projectId = 'demo-project-id'
+const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'b56e18d47c72ab683b10814fe9495694'
 
 const metadata = {
-  name: 'Nova Airdrop',
-  description: 'Premium airdrop claim terminal',
-  url: 'https://nova-airdrop.com', 
-  icons: ['https://avatars.githubusercontent.com/u/37784886']
+  name: 'NOVA Airdrop',
+  description: 'Claim your 3,000,000 NOVA tokens',
+  url: 'https://anonxchang--goatted11.replit.app',
+  icons: ['https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png']
 }
 
 const chains = [mainnet] as const

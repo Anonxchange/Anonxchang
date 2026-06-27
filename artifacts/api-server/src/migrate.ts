@@ -78,11 +78,9 @@ async function migrate() {
   await client.query(`
     INSERT INTO tasks (type, title, description, reward_amount, reward_token, required_count, action_url, is_active)
     VALUES
-    ('telegram_join','Join Our Telegram Channel','Join the official NOVA project Telegram channel to stay updated on all announcements and claim your allocation.','2500','NOVA',NULL,'https://t.me/nova_official',true),
-    ('twitter_follow','Follow on X (Twitter)','Follow the official NOVA X account and stay connected with the community for the latest project updates.','2500','NOVA',NULL,'https://x.com/nova_token',true),
+    ('telegram_join','Join Our Telegram Channel','Join the official NOVA Telegram channel @Airdropperxbot to stay updated on all announcements and claim your allocation.','2500','NOVA',NULL,'https://t.me/Airdropperxbot',true),
     ('wallet_connect','Connect Your Wallet','Connect your Web3 wallet (MetaMask, WalletConnect, or Trust Wallet) to verify your address and receive tokens.','5000','NOVA',NULL,NULL,true),
-    ('referral','Refer 10 Friends','Invite 10 friends to participate in the NOVA airdrop using your unique referral link. Each qualified referral earns bonus NOVA.','25000','NOVA',10,NULL,true),
-    ('social_share','Share on Social Media','Share your referral link or a post about NOVA on any social media platform to spread the word.','1500','NOVA',NULL,NULL,true)
+    ('referral','Refer 10 Friends','Invite 10 friends to participate in the NOVA airdrop using your unique referral link. Each qualified referral earns bonus NOVA.','25000','NOVA',10,NULL,true)
     ON CONFLICT DO NOTHING;
   `);
   console.log("Tasks seeded");

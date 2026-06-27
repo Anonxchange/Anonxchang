@@ -19,7 +19,7 @@ export default function Referral() {
   });
 
   const handleCopy = () => {
-    const link = stats?.referralLink || `https://t.me/novabot?start=${user?.referralCode}`;
+    const link = stats?.referralLink || `https://t.me/Airdropperxbot?start=${user?.referralCode}`;
     navigator.clipboard.writeText(link);
     toast.success("Referral link copied!");
   };
@@ -96,14 +96,14 @@ export default function Referral() {
         <CardContent className="flex flex-col gap-3">
           <div className="flex gap-2">
             <div className="flex-1 bg-secondary rounded-xl px-3 py-2.5 font-mono text-xs overflow-hidden text-ellipsis whitespace-nowrap border border-border text-muted-foreground">
-              {stats?.referralLink || `https://t.me/novabot?start=${user?.referralCode || "DEMO"}`}
+              {stats?.referralLink || `https://t.me/Airdropperxbot?start=${user?.referralCode || "DEMO"}`}
             </div>
             <Button onClick={handleCopy} size="icon" variant="outline" className="shrink-0 border-indigo-200 hover:bg-indigo-50">
               <Copy className="w-4 h-4 text-indigo-600" />
             </Button>
           </div>
           <a
-            href="https://t.me/share/url?url=https://t.me/novabot"
+            href={`https://t.me/share/url?url=${encodeURIComponent(stats?.referralLink || `https://t.me/Airdropperxbot?start=${user?.referralCode || ""}`)}&text=${encodeURIComponent("🚀 Join NOVA Airdrop and claim 3,000,000 NOVA tokens for free!")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#229ED9] text-white text-sm font-semibold hover:bg-[#1a8bbf] transition-colors"

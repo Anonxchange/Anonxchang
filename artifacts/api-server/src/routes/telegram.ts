@@ -165,7 +165,7 @@ async function handleReferral(chatId: number, telegramId: number) {
     return;
   }
 
-  const link = `https://t.me/${process.env.BOT_USERNAME || "nova_airdrop_bot"}?start=${user.referral_code}`;
+  const link = `https://t.me/${process.env.BOT_USERNAME || "Airdropperxbot"}?start=${user.referral_code}`;
 
   await sendMessage(
     chatId,
