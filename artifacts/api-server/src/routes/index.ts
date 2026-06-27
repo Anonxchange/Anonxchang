@@ -6,6 +6,7 @@ import tasksRouter from "./tasks";
 import referralsRouter from "./referrals";
 import tokensRouter from "./tokens";
 import statsRouter from "./stats";
+import telegramRouter from "./telegram";
 
 const router: IRouter = Router();
 
@@ -17,5 +18,6 @@ router.use("/users", tasksRouter);
 router.use("/referrals", referralsRouter);
 router.use("/tokens", tokensRouter);
 router.use("/stats", statsRouter);
+router.use("/telegram", telegramRouter);
 
 export default router;
