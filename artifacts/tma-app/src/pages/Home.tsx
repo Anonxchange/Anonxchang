@@ -444,36 +444,44 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {/* ── Blockchain Proof ─────────────────────────────── */}
-      <Card className="glass-card border border-green-100 bg-green-50/40">
+      {/* ── NOVA Token Info ──────────────────────────────── */}
+      <Card className="glass-card border border-indigo-100 bg-indigo-50/30">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-3">
-            <ShieldCheck className="w-4 h-4 text-green-600" />
-            <span className="text-sm font-bold text-green-800">Verified On-Chain</span>
-            <span className="ml-auto px-2 py-0.5 rounded-full bg-green-100 border border-green-200 text-[10px] font-bold text-green-700 uppercase tracking-wide">
-              BNB Smart Chain
+            <ShieldCheck className="w-4 h-4 text-indigo-600" />
+            <span className="text-sm font-bold text-indigo-800">NOVA on BNB Smart Chain</span>
+            <span className="ml-auto px-2 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-[10px] font-bold text-indigo-700 uppercase tracking-wide">
+              BSC · BEP-20
             </span>
           </div>
 
           <div className="flex flex-col gap-2">
             <a
-              href="https://bscscan.com/address/0x2674b6DD25b98b86ba62a1d81Fa698161633B0cD"
+              href="https://bscscan.com/token/0xc2253e68b52c678bd19c2bdcf2f4b7e8a4e4e7d"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-green-100 hover:border-green-300 transition-colors group"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-indigo-100 hover:border-indigo-300 transition-colors group"
             >
-              <div>
-                <div className="text-xs font-semibold text-foreground">Fee Wallet · BscScan</div>
-                <div className="text-[10px] font-mono text-muted-foreground">0x2674...B0cD</div>
+              <div className="flex items-center gap-2">
+                <img
+                  src="https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png"
+                  alt="NOVA"
+                  className="w-5 h-5 rounded-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+                <div>
+                  <div className="text-xs font-semibold text-foreground">NOVA Token · BscScan</div>
+                  <div className="text-[10px] font-mono text-muted-foreground">BEP-20 · BNB Chain</div>
+                </div>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-green-500 group-hover:text-green-700" />
+              <ExternalLink className="w-3.5 h-3.5 text-indigo-500 group-hover:text-indigo-700" />
             </a>
 
             <a
               href="https://www.coingecko.com/en/coins/nova-finance"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-green-100 hover:border-green-300 transition-colors group"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-indigo-100 hover:border-indigo-300 transition-colors group"
             >
               <div className="flex items-center gap-2">
                 <img
@@ -487,21 +495,16 @@ export default function Home() {
                   <div className="text-[10px] text-muted-foreground">Live price · $0.003316</div>
                 </div>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-green-500 group-hover:text-green-700" />
+              <ExternalLink className="w-3.5 h-3.5 text-indigo-500 group-hover:text-indigo-700" />
             </a>
 
-            <a
-              href="https://bscscan.com/token/0x2674b6DD25b98b86ba62a1d81Fa698161633B0cD"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-green-100 hover:border-green-300 transition-colors group"
-            >
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-indigo-50 border border-indigo-100">
               <div>
-                <div className="text-xs font-semibold text-foreground">Smart Contract · BSC</div>
-                <div className="text-[10px] text-muted-foreground">Network: BNB Chain (BSC) · Gas: BNB</div>
+                <div className="text-xs font-semibold text-foreground">Network</div>
+                <div className="text-[10px] text-muted-foreground">BNB Smart Chain · Gas paid in BNB</div>
               </div>
-              <ExternalLink className="w-3.5 h-3.5 text-green-500 group-hover:text-green-700" />
-            </a>
+              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">BEP-20</span>
+            </div>
           </div>
         </CardContent>
       </Card>

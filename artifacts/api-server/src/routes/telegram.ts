@@ -133,7 +133,7 @@ async function handleStatus(chatId: number, telegramId: number) {
   const claimStatus = claim ? claim.status : "Not claimed";
   const tasksDone = tasks.length;
   const refs = Number(referralCount) || 0;
-  const bonusNova = refs * 500_000;
+  const bonusNova = refs * 90_000;
 
   await sendMessage(
     chatId,
@@ -167,7 +167,7 @@ async function handleReferral(chatId: number, telegramId: number) {
     chatId,
     `🔗 <b>Your Referral Link</b>\n\n` +
     `<code>${link}</code>\n\n` +
-    `💰 Earn <b>+500,000 NOVA</b> for every qualified friend you invite.\n` +
+    `💰 Earn <b>+90,000 NOVA</b> for every qualified friend you invite.\n` +
     `🏆 Invite 10 friends to unlock the MAX tier bonus of <b>5,000,000 NOVA</b>!`,
     { reply_markup: miniAppButton("📤 Share Link", `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("Join NOVA Airdrop and claim your free tokens!")}`) }
   );

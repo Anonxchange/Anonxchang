@@ -7,10 +7,12 @@ import React from 'react'
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'b56e18d47c72ab683b10814fe9495694'
 
+const appUrl = typeof window !== 'undefined' ? window.location.origin : 'https://anonxchang--dicee142.replit.app'
+
 const metadata = {
   name: 'NOVA Airdrop',
   description: 'Claim your 900,000 NOVA tokens',
-  url: 'https://anonxchang--dicee142.replit.app',
+  url: appUrl,
   icons: ['https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png']
 }
 

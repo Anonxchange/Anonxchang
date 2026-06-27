@@ -9,8 +9,8 @@ import { Copy, UserPlus, Gift, Trophy } from "lucide-react";
 import { toast } from "sonner";
 
 const MAX_REFERRALS = 10;
-const REWARD_PER_REFERRAL = 500_000;
-const MAX_TIER_BONUS = 5_000_000;
+const REWARD_PER_REFERRAL = 90_000;
+const MAX_TIER_BONUS = 900_000;
 
 export default function Referral() {
   const { telegramId, user } = useTelegram();
@@ -48,7 +48,7 @@ export default function Referral() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-black tracking-tight mb-0.5 neon-text">Referrals</h1>
-        <p className="text-muted-foreground text-xs">Invite friends · earn up to 5,000,000 extra NOVA</p>
+        <p className="text-muted-foreground text-xs">Invite friends · earn up to 900,000 extra NOVA</p>
       </div>
 
       {/* Reward progress card */}
@@ -84,7 +84,7 @@ export default function Referral() {
 
           {qualified >= MAX_REFERRALS && (
             <div className="mt-3 p-2.5 rounded-xl bg-green-50 border border-green-200 text-center text-xs font-semibold text-green-700">
-              🎉 MAX Tier Unlocked! +5,000,000 NOVA bonus applied.
+              🎉 MAX Tier Unlocked! +900,000 NOVA bonus applied.
             </div>
           )}
         </CardContent>
@@ -132,10 +132,10 @@ export default function Referral() {
       {/* Tier legend — compact horizontal chips */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
         {[
-          { n: 1,  label: "1 friend",   reward: "500K",   color: "border-slate-200 bg-slate-50   text-slate-600" },
-          { n: 3,  label: "3 friends",  reward: "1.5M",   color: "border-blue-200  bg-blue-50    text-blue-700"  },
-          { n: 5,  label: "5 friends",  reward: "2.5M",   color: "border-violet-200 bg-violet-50 text-violet-700"},
-          { n: 10, label: "10 friends", reward: "5M MAX", color: "border-yellow-300 bg-yellow-50 text-yellow-700"},
+          { n: 1,  label: "1 friend",   reward: "90K",    color: "border-slate-200 bg-slate-50   text-slate-600" },
+          { n: 3,  label: "3 friends",  reward: "270K",   color: "border-blue-200  bg-blue-50    text-blue-700"  },
+          { n: 5,  label: "5 friends",  reward: "450K",   color: "border-violet-200 bg-violet-50 text-violet-700"},
+          { n: 10, label: "10 friends", reward: "900K MAX", color: "border-yellow-300 bg-yellow-50 text-yellow-700"},
         ].map(tier => (
           <div
             key={tier.n}

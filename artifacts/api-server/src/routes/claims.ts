@@ -5,7 +5,7 @@ import { eq, isNotNull } from "drizzle-orm";
 
 const router = Router();
 
-const REWARD_PER_REFERRAL = 500_000;
+const REWARD_PER_REFERRAL = 90_000;
 
 router.post("/", async (req, res) => {
   const { telegramId, walletAddress, txHash, feePaid, tokenSymbol } = req.body ?? {};
