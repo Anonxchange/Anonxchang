@@ -529,7 +529,7 @@ export default function Home() {
 
           <div className="flex flex-col gap-2">
             <a
-              href="https://bscscan.com/token/0xc2253e68b52c678bd19c2bdcf2f4b7e8a4e4e7d"
+              href="https://bscscan.com/token/0x2Fc1493bcc38DA9921Ac749899826289a146A1Fb"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-indigo-100 hover:border-indigo-300 transition-colors group"
