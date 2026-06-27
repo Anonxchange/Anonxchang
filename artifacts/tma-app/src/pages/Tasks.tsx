@@ -47,7 +47,7 @@ export default function Tasks() {
   const handleCompleteTask = (taskId: number, actionUrl?: string | null) => {
     if (actionUrl) window.open(actionUrl, '_blank');
     setCompletingTaskId(taskId);
-    const delay = actionUrl ? 3000 : 0;
+    const delay = actionUrl ? 1500 : 0;
     setTimeout(() => {
       completeTask.mutate({ telegramId, taskId, data: {} }, {
         onSuccess: () => {
