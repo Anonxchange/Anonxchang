@@ -11,7 +11,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const tabs = [
     { href: "/", label: "Home", icon: Home },
     { href: "/tasks", label: "Tasks", icon: ListTodo },
-    { href: "/referral", label: "Referral", icon: Users },
+    { href: "/referral", label: "Refer", icon: Users },
     { href: "/leaderboard", label: "Board", icon: Trophy },
     { href: "/tokens", label: "Tokens", icon: Coins },
   ];
