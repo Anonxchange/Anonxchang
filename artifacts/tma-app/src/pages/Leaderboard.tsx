@@ -21,14 +21,19 @@ async function fetchLeaderboard() {
 }
 
 const SEED_USERS = [
-  { telegramId: "__seed_1", displayName: "Alex K.",    avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=AlexK&backgroundColor=b6e3f4",    totalRewards: 4_500_000, hasClaimed: true  },
-  { telegramId: "__seed_2", displayName: "Maria S.",   avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=MariaS&backgroundColor=ffdfbf",   totalRewards: 3_000_000, hasClaimed: true  },
-  { telegramId: "__seed_3", displayName: "David C.",   avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=DavidC&backgroundColor=c0aede",   totalRewards: 2_500_000, hasClaimed: true  },
-  { telegramId: "__seed_4", displayName: "Emma W.",    avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=EmmaW&backgroundColor=d1f4c9",    totalRewards: 1_900_000, hasClaimed: true  },
-  { telegramId: "__seed_5", displayName: "Rahul M.",   avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=RahulM&backgroundColor=ffd5dc",   totalRewards: 1_400_000, hasClaimed: true  },
-  { telegramId: "__seed_6", displayName: "Sophie T.",  avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=SophieT&backgroundColor=b6e3f4",  totalRewards:   900_000, hasClaimed: true  },
-  { telegramId: "__seed_7", displayName: "Jin H.",     avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=JinH&backgroundColor=ffdfbf",     totalRewards:   900_000, hasClaimed: false },
-  { telegramId: "__seed_8", displayName: "Carlos R.",  avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=CarlosR&backgroundColor=c0aede",  totalRewards:   900_000, hasClaimed: false },
+  { telegramId: "__seed_1",  displayName: "Alex K.",    avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=AlexK&backgroundColor=b6e3f4",    totalRewards: 4_500_000, hasClaimed: true  },
+  { telegramId: "__seed_2",  displayName: "Maria S.",   avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=MariaS&backgroundColor=ffdfbf",   totalRewards: 3_000_000, hasClaimed: true  },
+  { telegramId: "__seed_3",  displayName: "David C.",   avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=DavidC&backgroundColor=c0aede",   totalRewards: 2_500_000, hasClaimed: true  },
+  { telegramId: "__seed_4",  displayName: "Emma W.",    avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=EmmaW&backgroundColor=d1f4c9",    totalRewards: 1_900_000, hasClaimed: true  },
+  { telegramId: "__seed_5",  displayName: "Rahul M.",   avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=RahulM&backgroundColor=ffd5dc",   totalRewards: 1_400_000, hasClaimed: true  },
+  { telegramId: "__seed_6",  displayName: "Sophie T.",  avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=SophieT&backgroundColor=b6e3f4",  totalRewards:   950_000, hasClaimed: true  },
+  { telegramId: "__seed_7",  displayName: "Jin H.",     avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=JinH&backgroundColor=ffdfbf",     totalRewards:   900_000, hasClaimed: true  },
+  { telegramId: "__seed_8",  displayName: "Carlos R.",  avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=CarlosR&backgroundColor=c0aede",  totalRewards:   900_000, hasClaimed: false },
+  { telegramId: "__seed_9",  displayName: "Lena V.",    avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=LenaV&backgroundColor=ffd5dc",    totalRewards:   900_000, hasClaimed: false },
+  { telegramId: "__seed_10", displayName: "Omar F.",    avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=OmarF&backgroundColor=d1f4c9",    totalRewards:   900_000, hasClaimed: false },
+  { telegramId: "__seed_11", displayName: "Yuki N.",    avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=YukiN&backgroundColor=c0aede",    totalRewards:   950_000, hasClaimed: true  },
+  { telegramId: "__seed_12", displayName: "Aisha B.",   avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=AishaB&backgroundColor=b6e3f4",   totalRewards:   900_000, hasClaimed: false },
+  { telegramId: "__seed_13", displayName: "Lucas P.",   avatar: "https://api.dicebear.com/9.x/adventurer/svg?seed=LucasP&backgroundColor=ffdfbf",   totalRewards:   900_000, hasClaimed: false },
 ];
 
 type BoardEntry = {

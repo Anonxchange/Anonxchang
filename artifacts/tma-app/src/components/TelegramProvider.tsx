@@ -38,6 +38,8 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
       enabled: !!telegramId,
       retry: false,
       queryKey: getGetUserQueryKey(telegramId),
+      refetchInterval: 5000,
+      refetchIntervalInBackground: false,
     }
   });
 
