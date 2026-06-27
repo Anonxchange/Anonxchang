@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Crypto TMA Token Claim API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: User management
+  - name: claims
+    description: Token claim operations
+  - name: tasks
+    description: Airdrop tasks
+  - name: referrals
+    description: Referral system
+  - name: tokens
+    description: Featured airdrop tokens
+  - name: stats
+    description: Global statistics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,233 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /users/register:
+    post:
+      operationId: registerUser
+      tags: [users]
+      summary: Register a Telegram user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegistration"
+      responses:
+        "201":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "200":
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{telegramId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by Telegram ID
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+
+  /users/{telegramId}/wallet:
+    patch:
+      operationId: updateWallet
+      tags: [users]
+      summary: Update user wallet address
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletUpdate"
+      responses:
+        "200":
+          description: Wallet updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /claims:
+    post:
+      operationId: submitClaim
+      tags: [claims]
+      summary: Submit a token claim with fee transaction hash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClaimInput"
+      responses:
+        "201":
+          description: Claim submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+        "400":
+          description: Invalid claim
+
+  /claims/{telegramId}:
+    get:
+      operationId: getUserClaim
+      tags: [claims]
+      summary: Get claim status for a user
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Claim status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+        "404":
+          description: No claim found
+
+  /tasks:
+    get:
+      operationId: listTasks
+      tags: [tasks]
+      summary: List all available airdrop tasks
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+
+  /users/{telegramId}/tasks:
+    get:
+      operationId: getUserTasks
+      tags: [tasks]
+      summary: Get task completion status for a user
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User tasks with completion status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserTaskStatus"
+
+  /users/{telegramId}/tasks/{taskId}/complete:
+    post:
+      operationId: completeTask
+      tags: [tasks]
+      summary: Mark a task as completed
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskCompletion"
+      responses:
+        "200":
+          description: Task completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserTaskStatus"
+
+  /referrals/{telegramId}:
+    get:
+      operationId: getReferralStats
+      tags: [referrals]
+      summary: Get referral statistics for a user
+      responses:
+        "200":
+          description: Referral stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralStats"
+      parameters:
+        - name: telegramId
+          in: path
+          required: true
+          schema:
+            type: string
+
+  /tokens:
+    get:
+      operationId: listTokens
+      tags: [tokens]
+      summary: List featured airdrop tokens
+      responses:
+        "200":
+          description: Featured tokens
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AirdropToken"
+
+  /stats:
+    get:
+      operationId: getGlobalStats
+      tags: [stats]
+      summary: Get global platform statistics
+      responses:
+        "200":
+          description: Global stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GlobalStats"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +272,279 @@ components:
       required:
         - status
 
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        telegramId:
+          type: string
+        username:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        walletAddress:
+          type: ["string", "null"]
+        referralCode:
+          type: string
+        referredBy:
+          type: ["string", "null"]
+        claimStatus:
+          type: string
+          enum: [pending, fee_paid, claimed]
+        totalRewards:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - telegramId
+        - referralCode
+        - claimStatus
+        - totalRewards
+        - createdAt
+
+    UserRegistration:
+      type: object
+      properties:
+        telegramId:
+          type: string
+        username:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        referralCode:
+          type: ["string", "null"]
+      required:
+        - telegramId
+
+    WalletUpdate:
+      type: object
+      properties:
+        walletAddress:
+          type: string
+      required:
+        - walletAddress
+
+    Claim:
+      type: object
+      properties:
+        id:
+          type: integer
+        telegramId:
+          type: string
+        walletAddress:
+          type: string
+        tokenAmount:
+          type: string
+        feePaid:
+          type: string
+        txHash:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, rejected]
+        createdAt:
+          type: string
+      required:
+        - id
+        - telegramId
+        - walletAddress
+        - tokenAmount
+        - feePaid
+        - txHash
+        - status
+        - createdAt
+
+    ClaimInput:
+      type: object
+      properties:
+        telegramId:
+          type: string
+        walletAddress:
+          type: string
+        txHash:
+          type: string
+        feePaid:
+          type: string
+        tokenSymbol:
+          type: string
+      required:
+        - telegramId
+        - walletAddress
+        - txHash
+        - feePaid
+        - tokenSymbol
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [telegram_join, twitter_follow, referral, wallet_connect, social_share]
+        title:
+          type: string
+        description:
+          type: string
+        rewardAmount:
+          type: string
+        rewardToken:
+          type: string
+        requiredCount:
+          type: ["integer", "null"]
+        actionUrl:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+      required:
+        - id
+        - type
+        - title
+        - description
+        - rewardAmount
+        - rewardToken
+        - isActive
+
+    UserTaskStatus:
+      type: object
+      properties:
+        taskId:
+          type: integer
+        telegramId:
+          type: string
+        isCompleted:
+          type: boolean
+        completedAt:
+          type: ["string", "null"]
+        proof:
+          type: ["string", "null"]
+        task:
+          $ref: "#/components/schemas/Task"
+      required:
+        - taskId
+        - telegramId
+        - isCompleted
+
+    TaskCompletion:
+      type: object
+      properties:
+        proof:
+          type: ["string", "null"]
+      required: []
+
+    ReferralStats:
+      type: object
+      properties:
+        telegramId:
+          type: string
+        referralCode:
+          type: string
+        referralLink:
+          type: string
+        totalReferrals:
+          type: integer
+        qualifiedReferrals:
+          type: integer
+        pendingReward:
+          type: string
+        claimedReward:
+          type: string
+        referrals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferralEntry"
+      required:
+        - telegramId
+        - referralCode
+        - referralLink
+        - totalReferrals
+        - qualifiedReferrals
+        - pendingReward
+        - claimedReward
+        - referrals
+
+    ReferralEntry:
+      type: object
+      properties:
+        username:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        joinedAt:
+          type: string
+        hasClaimed:
+          type: boolean
+      required:
+        - joinedAt
+        - hasClaimed
+
+    AirdropToken:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        name:
+          type: string
+        logoUrl:
+          type: string
+        network:
+          type: string
+        totalSupply:
+          type: string
+        airdropAmount:
+          type: string
+        feeRequired:
+          type: string
+        feeToken:
+          type: string
+        claimDeadline:
+          type: ["string", "null"]
+        totalParticipants:
+          type: integer
+        description:
+          type: string
+        website:
+          type: ["string", "null"]
+        isFeatured:
+          type: boolean
+      required:
+        - id
+        - symbol
+        - name
+        - logoUrl
+        - network
+        - totalSupply
+        - airdropAmount
+        - feeRequired
+        - feeToken
+        - totalParticipants
+        - description
+        - isFeatured
+
+    GlobalStats:
+      type: object
+      properties:
+        totalParticipants:
+          type: integer
+        totalClaimed:
+          type: string
+        totalFeesCollected:
+          type: string
+        activeAirdrops:
+          type: integer
+        totalReferrals:
+          type: integer
+      required:
+        - totalParticipants
+        - totalClaimed
+        - totalFeesCollected
+        - activeAirdrops
+        - totalReferrals

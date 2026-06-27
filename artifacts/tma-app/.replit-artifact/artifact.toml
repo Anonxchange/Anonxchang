@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Crypto TMA - Token Claim App"
+version = "1.0.0"
+id = "artifacts/tma-app"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21492
+
+[services.development]
+run = "pnpm --filter @workspace/tma-app run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/tma-app", "run", "build" ]
+publicDir = "artifacts/tma-app/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21492"
+BASE_PATH = "/"
