@@ -55,7 +55,7 @@ export default function Tokens() {
           <div className="text-white/70 text-xs mb-1">Your allocation: <span className="text-white font-bold">3,000,000 NOVA</span></div>
         </div>
         <a
-          href="https://t.me/your_bot"
+          href="https://t.me/Airdropperxbot"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/20 text-white text-xs font-semibold border border-white/30 hover:bg-white/30 transition-colors flex-shrink-0"

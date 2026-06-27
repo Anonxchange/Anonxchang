@@ -1,7 +1,7 @@
 import { createWeb3Modal } from '@web3modal/wagmi/react'
 import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
 import { WagmiProvider } from 'wagmi'
-import { mainnet } from 'wagmi/chains'
+import { bsc } from 'wagmi/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 
@@ -14,18 +14,10 @@ const metadata = {
   icons: ['https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png']
 }
 
-const chains = [mainnet] as const
-const config = defaultWagmiConfig({
-  chains,
-  projectId,
-  metadata,
-})
+const chains = [bsc] as const
+const config = defaultWagmiConfig({ chains, projectId, metadata })
 
-createWeb3Modal({
-  wagmiConfig: config,
-  projectId,
-  enableAnalytics: false,
-})
+createWeb3Modal({ wagmiConfig: config, projectId, enableAnalytics: false })
 
 const queryClient = new QueryClient()
 

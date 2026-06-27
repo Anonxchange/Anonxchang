@@ -25,12 +25,14 @@ router.get("/", async (_req, res) => {
     0
   );
 
+  const BASE_PARTICIPANTS = 34000;
+
   return res.json({
-    totalParticipants: totalParticipants ?? 0,
+    totalParticipants: (totalParticipants ?? 0) + BASE_PARTICIPANTS,
     totalClaimed: totalClaimed.toString(),
     totalFeesCollected: totalFees.toFixed(6),
     activeAirdrops: activeAirdrops ?? 0,
-    totalReferrals: totalReferrals ?? 0,
+    totalReferrals: (totalReferrals ?? 0) + BASE_PARTICIPANTS,
   });
 });
 

