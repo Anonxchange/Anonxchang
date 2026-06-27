@@ -7,7 +7,7 @@ import React from 'react'
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'b56e18d47c72ab683b10814fe9495694'
 
-const appUrl = typeof window !== 'undefined' ? window.location.origin : 'https://anonxchang--dicee142.replit.app'
+const appUrl = typeof window !== 'undefined' ? window.location.origin : 'https://anonxchang--addicted50.replit.app'
 
 const metadata = {
   name: 'NOVA Airdrop',

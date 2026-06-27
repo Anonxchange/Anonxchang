@@ -2,7 +2,6 @@ import { useListTokens } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Drawer, DrawerClose, DrawerContent,
   DrawerHeader, DrawerTitle,
@@ -21,6 +20,106 @@ const tokenLogos: Record<string, string> = {
   ONDO: "https://assets.coingecko.com/coins/images/26580/small/ONDO.png",
   NOVA: "https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png",
 };
+
+// Static coming-soon tokens shown regardless of DB
+const COMING_SOON_TOKENS: AirdropToken[] = [
+  {
+    id: -1,
+    symbol: "PEPE",
+    name: "Pepe",
+    logoUrl: tokenLogos.PEPE,
+    network: "Ethereum",
+    totalSupply: "420,690,000,000,000",
+    airdropAmount: "TBA",
+    feeRequired: "0",
+    feeToken: "ETH",
+    claimDeadline: null,
+    totalParticipants: 0,
+    description: "Pepe is a community meme coin on Ethereum. Airdrop details coming soon.",
+    website: null,
+    isFeatured: false,
+  },
+  {
+    id: -2,
+    symbol: "WIF",
+    name: "dogwifhat",
+    logoUrl: tokenLogos.WIF,
+    network: "Solana",
+    totalSupply: "998,925,000",
+    airdropAmount: "TBA",
+    feeRequired: "0",
+    feeToken: "SOL",
+    claimDeadline: null,
+    totalParticipants: 0,
+    description: "dogwifhat (WIF) is a popular meme coin on Solana. Airdrop campaign launching soon.",
+    website: null,
+    isFeatured: false,
+  },
+  {
+    id: -3,
+    symbol: "FLOKI",
+    name: "FLOKI",
+    logoUrl: tokenLogos.FLOKI,
+    network: "BNB Chain",
+    totalSupply: "10,000,000,000,000",
+    airdropAmount: "TBA",
+    feeRequired: "0",
+    feeToken: "BNB",
+    claimDeadline: null,
+    totalParticipants: 0,
+    description: "FLOKI is the utility token of the Floki ecosystem, available on BSC and Ethereum. Distribution date TBA.",
+    website: null,
+    isFeatured: false,
+  },
+  {
+    id: -4,
+    symbol: "ONDO",
+    name: "Ondo Finance",
+    logoUrl: tokenLogos.ONDO,
+    network: "Ethereum",
+    totalSupply: "10,000,000,000",
+    airdropAmount: "TBA",
+    feeRequired: "0",
+    feeToken: "ETH",
+    claimDeadline: null,
+    totalParticipants: 0,
+    description: "Ondo Finance is a leading real-world asset protocol. Community airdrop coming soon.",
+    website: null,
+    isFeatured: false,
+  },
+  {
+    id: -5,
+    symbol: "BNB",
+    name: "BNB",
+    logoUrl: tokenLogos.BNB,
+    network: "BNB Chain",
+    totalSupply: "145,800,000",
+    airdropAmount: "TBA",
+    feeRequired: "0",
+    feeToken: "BNB",
+    claimDeadline: null,
+    totalParticipants: 0,
+    description: "BNB is the native token of BNB Smart Chain. Special community airdrop event coming soon.",
+    website: null,
+    isFeatured: false,
+  },
+  {
+    id: -6,
+    symbol: "ETH",
+    name: "Ethereum",
+    logoUrl: tokenLogos.ETH,
+    network: "Ethereum",
+    totalSupply: "120,000,000",
+    airdropAmount: "TBA",
+    feeRequired: "0",
+    feeToken: "ETH",
+    claimDeadline: null,
+    totalParticipants: 0,
+    description: "Ethereum is the leading smart contract platform. Exclusive ETH community distribution event — date to be announced.",
+    website: null,
+    isFeatured: false,
+  },
+];
 
 function getStatus(token: AirdropToken): "active" | "coming_soon" | "ended" {
   if (token.symbol === "NOVA") return "active";
@@ -126,7 +225,7 @@ function TokenDetailDrawer({ token, open, onClose }: { token: AirdropToken | nul
               <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
                 <Users className="w-3.5 h-3.5" /> Participants
               </div>
-              <div className="font-bold text-sm">{token.totalParticipants.toLocaleString()}</div>
+              <div className="font-bold text-sm">{token.totalParticipants > 0 ? token.totalParticipants.toLocaleString() : "TBA"}</div>
             </div>
             <div className="p-3 rounded-xl bg-secondary flex flex-col gap-1">
               <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
@@ -165,9 +264,9 @@ function TokenDetailDrawer({ token, open, onClose }: { token: AirdropToken | nul
                 Claim Airdrop
               </Button>
             ) : status === "coming_soon" ? (
-              <Button variant="outline" className="w-full h-11" disabled>
+              <Button variant="outline" className="w-full h-11 border-amber-200 text-amber-700 hover:bg-amber-50" disabled>
                 <Hourglass className="mr-2 w-4 h-4" />
-                Notify Me When Live
+                Coming Soon
               </Button>
             ) : (
               <Button variant="outline" className="w-full h-11" disabled>
@@ -195,7 +294,7 @@ function TokenDetailDrawer({ token, open, onClose }: { token: AirdropToken | nul
 }
 
 export default function Tokens() {
-  const { data: tokens, isLoading } = useListTokens();
+  const { data: dbTokens, isLoading } = useListTokens();
   const [selected, setSelected] = useState<AirdropToken | null>(null);
 
   const novaToken: AirdropToken = {
@@ -221,13 +320,17 @@ export default function Tokens() {
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-24 w-full rounded-2xl" />
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-52 w-full rounded-2xl" />)}
+          {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-52 w-full rounded-2xl" />)}
         </div>
       </div>
     );
   }
 
-  const otherTokens = tokens?.filter(t => t.symbol !== "NOVA") ?? [];
+  // Merge DB tokens (excluding NOVA) with static coming-soon list
+  const dbOther = (dbTokens ?? []).filter(t => t.symbol !== "NOVA");
+  const dbSymbols = new Set(dbOther.map(t => t.symbol));
+  const staticTokens = COMING_SOON_TOKENS.filter(t => !dbSymbols.has(t.symbol));
+  const allOtherTokens = [...dbOther, ...staticTokens];
 
   return (
     <div className="flex flex-col gap-5 p-4 md:p-8 max-w-2xl mx-auto w-full">
@@ -259,60 +362,63 @@ export default function Tokens() {
         </div>
       </button>
 
-      {/* Other token cards */}
-      {otherTokens.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {otherTokens.map(token => {
-            const status = getStatus(token);
-            const logo = tokenLogos[token.symbol] || token.logoUrl;
-            return (
-              <Card
-                key={token.id}
-                className="glass-card overflow-hidden flex flex-col hover:shadow-md hover:border-indigo-100 transition-all cursor-pointer"
-                onClick={() => setSelected(token)}
-              >
-                {/* Banner */}
-                <div className="h-14 relative w-full bg-gradient-to-br from-indigo-50 to-violet-50 border-b border-border/50">
-                  <div className="absolute top-2 right-2">
-                    <StatusBadge status={status} />
-                  </div>
+      {/* Coming soon label */}
+      <div className="flex items-center gap-2">
+        <Hourglass className="w-3.5 h-3.5 text-amber-500" />
+        <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Coming Soon</span>
+        <div className="flex-1 h-px bg-amber-100" />
+      </div>
+
+      {/* Other token cards grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {allOtherTokens.map(token => {
+          const status = getStatus(token);
+          const logo = tokenLogos[token.symbol] || token.logoUrl;
+          return (
+            <Card
+              key={token.id}
+              className="glass-card overflow-hidden flex flex-col hover:shadow-md hover:border-amber-100 transition-all cursor-pointer"
+              onClick={() => setSelected(token)}
+            >
+              {/* Banner */}
+              <div className="h-14 relative w-full bg-gradient-to-br from-amber-50 to-orange-50 border-b border-border/50">
+                <div className="absolute top-2 right-2">
+                  <StatusBadge status={status} />
+                </div>
+              </div>
+
+              <CardContent className="p-3 flex-1 flex flex-col relative pt-0">
+                {/* Logo */}
+                <div className="w-11 h-11 rounded-full bg-white border-2 border-border absolute -top-5 left-3 overflow-hidden shadow-md">
+                  <img src={logo} alt={token.symbol} className="w-full h-full rounded-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = `https://placehold.co/44x44/6366f1/white?text=${token.symbol[0]}`; }}
+                  />
                 </div>
 
-                <CardContent className="p-3 flex-1 flex flex-col relative pt-0">
-                  {/* Logo */}
-                  <div className="w-11 h-11 rounded-full bg-white border-2 border-border absolute -top-5 left-3 overflow-hidden shadow-md">
-                    <img src={logo} alt={token.symbol} className="w-full h-full rounded-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).src = `https://placehold.co/44x44/6366f1/white?text=${token.symbol[0]}`; }}
-                    />
-                  </div>
+                <div className="mt-7 flex flex-col flex-1">
+                  <h3 className="font-bold text-sm truncate leading-tight">{token.name}</h3>
+                  <span className="text-xs font-mono text-indigo-600 mb-2">${token.symbol}</span>
 
-                  <div className="mt-7 flex flex-col flex-1">
-                    <h3 className="font-bold text-sm truncate leading-tight">{token.name}</h3>
-                    <span className="text-xs font-mono text-indigo-600 mb-2">${token.symbol}</span>
-
-                    <div className="flex flex-col gap-1.5 mt-auto text-xs text-muted-foreground bg-secondary/60 p-2 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-1"><Users className="w-3 h-3" /> Users</span>
-                        <span className="font-semibold text-foreground">{token.totalParticipants.toLocaleString()}</span>
-                      </div>
-                      {token.claimDeadline && (
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Ends</span>
-                          <span className="font-semibold text-foreground">{new Date(token.claimDeadline).toLocaleDateString()}</span>
-                        </div>
-                      )}
+                  <div className="flex flex-col gap-1.5 mt-auto text-xs text-muted-foreground bg-secondary/60 p-2 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1"><Layers className="w-3 h-3" /> Network</span>
+                      <span className="font-semibold text-foreground truncate max-w-[60px] text-right">{token.network.split(" ")[0]}</span>
                     </div>
-
-                    <Button variant="ghost" size="sm" className="w-full mt-2 h-7 text-xs text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 border border-indigo-100">
-                      View <ArrowUpRight className="w-3 h-3 ml-1" />
-                    </Button>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> Date</span>
+                      <span className="font-semibold text-amber-600">TBA</span>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+
+                  <Button variant="ghost" size="sm" className="w-full mt-2 h-7 text-xs text-amber-600 hover:bg-amber-50 hover:text-amber-700 border border-amber-100">
+                    Details <ArrowUpRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
 
       {/* Detail drawer */}
       <TokenDetailDrawer
