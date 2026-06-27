@@ -23,11 +23,8 @@ const tokenLogos: Record<string, string> = {
 };
 
 function getStatus(token: AirdropToken): "active" | "coming_soon" | "ended" {
-  if (!token.claimDeadline) return "coming_soon";
-  const deadline = new Date(token.claimDeadline);
-  const now = new Date();
-  if (deadline < now) return "ended";
-  return "active";
+  if (token.symbol === "NOVA") return "active";
+  return "coming_soon";
 }
 
 function StatusBadge({ status }: { status: "active" | "coming_soon" | "ended" }) {
