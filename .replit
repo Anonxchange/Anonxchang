@@ -68,3 +68,11 @@ SUPABASE_DB_URL = "postgresql://postgres:Cordinator007@db.icfjyvuxxnmdyruoklej.s
 TELEGRAM_BOT_TOKEN = "8743771527:AAGH1sMHWdRVxEzgCBotXcxsC3Fkl3xBVNg"
 MINI_APP_URL = "https://anonxchang--dicee142.replit.app"
 BOT_USERNAME = "Airdropperxbot"
+
+[[ports]]
+localPort = 8080
+externalPort = 80
+
+[[ports]]
+localPort = 21492
+externalPort = 3000

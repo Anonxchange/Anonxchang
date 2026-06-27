@@ -246,7 +246,7 @@ export default function Home() {
             Claim NOVA Tokens
           </CardTitle>
           <CardDescription className="text-xs">
-            A network fee of {GAS_FEE_BNB} BNB (~$2.82) is required to process your claim. Deadline: <strong>July 25, 2026</strong>.
+            You'll be charged a standard blockchain network fee to process your claim. The exact amount depends on current network congestion — this is an on-chain gas fee, not set by us. Deadline: <strong>July 25, 2026</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
@@ -279,7 +279,7 @@ export default function Home() {
                 <DrawerHeader>
                   <DrawerTitle>Confirm Claim Transaction</DrawerTitle>
                   <DrawerDescription>
-                    Your wallet will prompt you to send {GAS_FEE_BNB} BNB as a gas fee. Once confirmed on-chain, your 900,000 NOVA allocation is locked in.
+                    Your wallet will prompt you to approve a network fee. The exact amount depends on current blockchain congestion — this is a standard on-chain gas fee, not set by us. Once confirmed, your 900,000 NOVA allocation is locked in.
                   </DrawerDescription>
                 </DrawerHeader>
                 <div className="p-4 flex flex-col gap-3">
@@ -299,12 +299,12 @@ export default function Home() {
                     <span className="font-semibold text-orange-600">July 25, 2026</span>
                   </div>
                   {/* Network fee */}
-                  <div className="flex justify-between items-center p-4 bg-secondary rounded-xl">
-                    <span className="text-muted-foreground text-sm">Network Fee</span>
-                    <div className="text-right">
-                      <div className="font-semibold">{GAS_FEE_BNB} BNB</div>
-                      <div className="text-xs text-muted-foreground">≈ $2.82</div>
+                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-muted-foreground text-sm">Network Fee</span>
+                      <span className="font-semibold text-sm">Varies by network</span>
                     </div>
+                    <p className="text-xs text-amber-700">Fee depends on current blockchain congestion. This is a standard on-chain gas fee — we have no control over it and it may be higher during peak times.</p>
                   </div>
                   {/* Wallet */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl border border-primary/20">
@@ -337,7 +337,7 @@ export default function Home() {
                         <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
                         {isSending ? "Approve in Wallet..." : "Confirming..."}
                       </>
-                    ) : `Pay ${GAS_FEE_BNB} BNB & Claim`}
+                    ) : "Approve & Claim 900,000 NOVA"}
                   </Button>
                   <DrawerClose asChild>
                     <Button variant="outline" className="w-full" disabled={isBusy}>Cancel</Button>
