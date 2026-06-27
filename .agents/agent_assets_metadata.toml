@@ -1,0 +1,13 @@
+uploads = []
+
+[[generated]]
+id = "llKqU0hDfHTe5kvlZZyAq"
+uri = "file://attached_assets/nova_bot_logo.png"
+type = "image"
+title = "NOVA airdrop bot logo"
+
+[[outputs]]
+id = "JG1PMLujYJYbpq8tDRa6c"
+uri = "file://attached_assets/nova_bot_logo.png"
+type = "image"
+title = "NOVA Bot Logo"
