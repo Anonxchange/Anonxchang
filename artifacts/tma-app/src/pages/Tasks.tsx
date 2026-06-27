@@ -99,18 +99,20 @@ export default function Tasks() {
           <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Your NOVA Balance</span>
         </div>
         <div className="text-3xl font-black tabular-nums">
-          {(900_000 + taskEarnings).toLocaleString()}
+          {taskEarnings.toLocaleString()}
           <span className="text-base font-semibold text-white/60 ml-1.5">NOVA</span>
         </div>
         <div className="flex gap-3 mt-3 pt-3 border-t border-white/20 text-xs">
           <div className="flex-1">
-            <div className="text-white/50 uppercase tracking-wider mb-0.5">Base</div>
-            <div className="font-bold">900,000</div>
+            <div className="text-white/50 uppercase tracking-wider mb-0.5">From Tasks</div>
+            <div className={`font-bold ${taskEarnings > 0 ? "text-green-300" : "text-white/40"}`}>
+              {taskEarnings > 0 ? `+${taskEarnings.toLocaleString()}` : "0"}
+            </div>
           </div>
           <div className="w-px bg-white/20" />
           <div className="flex-1">
-            <div className="text-white/50 uppercase tracking-wider mb-0.5">Task Rewards</div>
-            <div className={`font-bold ${taskEarnings > 0 ? "text-green-300" : "text-white/40"}`}>+{taskEarnings.toLocaleString()}</div>
+            <div className="text-white/50 uppercase tracking-wider mb-0.5">Base Airdrop</div>
+            <div className="font-bold">900,000</div>
           </div>
           <div className="w-px bg-white/20" />
           <div className="flex-1 text-right">

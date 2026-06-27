@@ -1,5 +1,6 @@
 import { useTelegram } from "@/components/TelegramProvider";
-import { useGetGlobalStats, useGetUserClaim, useSubmitClaim, useUpdateWallet } from "@workspace/api-client-react";
+import { useGetGlobalStats, useGetUserClaim, useSubmitClaim, useUpdateWallet, useCompleteTask, getGetUserQueryKey, getGetUserTasksQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt, useBalance } from "wagmi";
 import { parseEther } from "viem";
@@ -66,6 +67,8 @@ export default function Home() {
 
   const updateWallet = useUpdateWallet();
   const submitClaim = useSubmitClaim();
+  const completeTask = useCompleteTask();
+  const queryClient = useQueryClient();
 
   // wagmi send transaction — triggers the wallet popup
   const { sendTransaction, data: txHash, isPending: isSending, isError: sendError } = useSendTransaction();
@@ -83,6 +86,19 @@ export default function Home() {
       updateWallet.mutate({ telegramId, data: { walletAddress: address } });
     }
   }, [isConnected, address, user, telegramId]);
+
+  // Auto-complete the wallet_connect task (id=1) when wallet connects
+  useEffect(() => {
+    if (!isConnected || !address || !telegramId) return;
+    completeTask.mutate({ telegramId, taskId: 1, data: {} }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
+        queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
+        toast.success("✅ Wallet connected — task reward added!");
+      },
+      onError: () => { /* silently ignore — task already completed */ },
+    });
+  }, [isConnected, address, telegramId]);
 
   // Once tx is confirmed on-chain, record the claim
   useEffect(() => {
