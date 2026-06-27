@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabase";
 
 const router = Router();
 
+const REWARD_PER_REFERRAL = 500_000;
+
 router.post("/", async (req, res) => {
   const { telegramId, walletAddress, txHash, feePaid, tokenSymbol } = req.body ?? {};
   if (!telegramId || !walletAddress || !txHash || !feePaid || !tokenSymbol) {
@@ -39,8 +41,36 @@ router.post("/", async (req, res) => {
     .update({ claim_status: "fee_paid", wallet_address: String(walletAddress) })
     .eq("telegram_id", String(telegramId));
 
+  await creditReferrer(String(telegramId));
+
   return res.status(201).json(formatClaim(claim));
 });
+
+async function creditReferrer(telegramId: string) {
+  const { data: claimer } = await supabase
+    .from("users")
+    .select("referred_by")
+    .eq("telegram_id", telegramId)
+    .single();
+
+  if (!claimer?.referred_by) return;
+
+  const { data: referrer } = await supabase
+    .from("users")
+    .select("id, total_rewards")
+    .eq("referral_code", claimer.referred_by)
+    .single();
+
+  if (!referrer) return;
+
+  const currentRewards = parseInt(referrer.total_rewards || "0", 10);
+  const newRewards = currentRewards + REWARD_PER_REFERRAL;
+
+  await supabase
+    .from("users")
+    .update({ total_rewards: String(newRewards) })
+    .eq("id", referrer.id);
+}
 
 router.get("/:telegramId", async (req, res) => {
   const { data: claim } = await supabase

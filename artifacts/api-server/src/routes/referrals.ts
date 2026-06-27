@@ -31,7 +31,7 @@ router.get("/:telegramId", async (req, res) => {
     referralLink: `https://t.me/${botUsername}?start=${user.referral_code}`,
     totalReferrals: (referrals ?? []).length,
     qualifiedReferrals: qualified.length,
-    pendingReward: String(qualified.length * 5000),
+    pendingReward: String(qualified.length * 500_000),
     claimedReward: "0",
     referrals: (referrals ?? []).map((r: any) => ({
       username: r.username ?? null,
