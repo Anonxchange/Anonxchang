@@ -6,8 +6,32 @@ uri = "file://attached_assets/nova_bot_logo.png"
 type = "image"
 title = "NOVA airdrop bot logo"
 
+[[generated]]
+id = "4qABHxj8TQHkGpoXuuxpF"
+uri = "file://attached_assets/nova_airdrop_banner.png"
+type = "image"
+title = "NOVA airdrop promotional banner"
+
+[[generated]]
+id = "9LlOd3fG2vzOqGsKiQdBg"
+uri = "file://attached_assets/nova_airdrop_square.png"
+type = "image"
+title = "NOVA airdrop square post"
+
 [[outputs]]
 id = "JG1PMLujYJYbpq8tDRa6c"
 uri = "file://attached_assets/nova_bot_logo.png"
 type = "image"
 title = "NOVA Bot Logo"
+
+[[outputs]]
+id = "i8IRVenKQJ6J63QSEhXeE"
+uri = "file://attached_assets/nova_airdrop_banner.png"
+type = "image"
+title = "Airdrop Banner (16:9 — for Telegram channels, Twitter/X)"
+
+[[outputs]]
+id = "5adFb9B6YXTmsyxrlbpYQ"
+uri = "file://attached_assets/nova_airdrop_square.png"
+type = "image"
+title = "Airdrop Square (1:1 — for posts, stories, group pinned messages)"
