@@ -22,9 +22,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <aside className="desktop-sidebar">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8 px-1">
-          <div className="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center shadow-md">
-            <span className="text-white font-bold text-lg">N</span>
-          </div>
+          <img
+            src="https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png"
+            alt="NOVA"
+            className="w-10 h-10 rounded-xl shadow-md object-cover"
+          />
           <div>
             <div className="font-bold text-base leading-tight">NOVA</div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-widest">Airdrop</div>
@@ -93,7 +95,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* ── Mobile Bottom Nav ──────────────────────────────── */}
-      <nav className="mobile-nav fixed bottom-0 left-0 right-0 bg-white border-t border-border pb-safe pt-2 px-4 justify-between items-center z-50">
+      <nav className="mobile-nav fixed bottom-0 left-0 right-0 bg-white border border-border rounded-t-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.08)] pb-safe pt-3 px-4 justify-between items-center z-50">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = location === tab.href;

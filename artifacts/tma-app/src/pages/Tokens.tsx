@@ -40,8 +40,12 @@ export default function Tokens() {
 
       {/* Featured NOVA */}
       <div className="hero-gradient rounded-2xl p-5 text-white flex items-center gap-4 shadow-md">
-        <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center flex-shrink-0">
-          <span className="text-2xl font-black text-white">N</span>
+        <div className="w-14 h-14 rounded-2xl overflow-hidden border border-white/30 shadow-lg flex-shrink-0">
+          <img
+            src="https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png"
+            alt="NOVA"
+            className="w-full h-full object-cover"
+          />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
