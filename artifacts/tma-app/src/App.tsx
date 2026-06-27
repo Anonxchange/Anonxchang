@@ -7,6 +7,7 @@ import Home from "@/pages/Home";
 import Tasks from "@/pages/Tasks";
 import Referral from "@/pages/Referral";
 import Tokens from "@/pages/Tokens";
+import Leaderboard from "@/pages/Leaderboard";
 import { TelegramProvider } from "@/components/TelegramProvider";
 import { Web3Provider } from "@/components/Web3Provider";
 
@@ -18,6 +19,7 @@ function Router() {
         <Route path="/tasks" component={Tasks} />
         <Route path="/referral" component={Referral} />
         <Route path="/tokens" component={Tokens} />
+        <Route path="/leaderboard" component={Leaderboard} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

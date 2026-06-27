@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, ListTodo, Users, Coins } from "lucide-react";
+import { Home, ListTodo, Users, Coins, Trophy } from "lucide-react";
 import { FaTelegram } from "react-icons/fa";
 import { cn } from "@/lib/utils";
 import { useHealthCheck } from "@workspace/api-client-react";
@@ -12,6 +12,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/", label: "Home", icon: Home },
     { href: "/tasks", label: "Tasks", icon: ListTodo },
     { href: "/referral", label: "Referral", icon: Users },
+    { href: "/leaderboard", label: "Board", icon: Trophy },
     { href: "/tokens", label: "Tokens", icon: Coins },
   ];
 
@@ -54,7 +55,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <div className="mt-auto">
           <a
-            href="https://t.me/your_bot"
+            href="https://t.me/Airdropperxbot"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-[#229ED9] hover:bg-[#229ED9]/10 transition-colors"
@@ -79,13 +80,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {tabs.find(t => t.href === location)?.label || "Home"}
           </h2>
           <a
-            href="https://t.me/your_bot"
+            href="https://t.me/Airdropperxbot"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#229ED9] text-white text-sm font-semibold hover:bg-[#1a8bbf] transition-colors shadow-sm"
           >
             <FaTelegram className="w-4 h-4" />
-            Telegram Bot
+            @Airdropperxbot
           </a>
         </header>
 
@@ -95,13 +96,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* ── Mobile Bottom Nav ──────────────────────────────── */}
-      <nav className="mobile-nav fixed bottom-0 left-0 right-0 bg-white border border-border rounded-t-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.08)] pb-safe pt-3 px-4 justify-between items-center z-50">
+      <nav className="mobile-nav fixed bottom-0 left-0 right-0 bg-white border border-border rounded-t-3xl shadow-[0_-4px_24px_rgba(0,0,0,0.08)] pb-safe pt-3 px-2 justify-between items-center z-50">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = location === tab.href;
           return (
             <Link key={tab.href} href={tab.href}>
-              <div className="flex flex-col items-center justify-center px-4 py-1 cursor-pointer">
+              <div className="flex flex-col items-center justify-center px-3 py-1 cursor-pointer">
                 <div className={cn(
                   "p-2 rounded-xl transition-all",
                   isActive ? "bg-primary/10 text-primary" : "text-muted-foreground"
@@ -109,7 +110,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <Icon className="w-5 h-5" />
                 </div>
                 <span className={cn(
-                  "text-[10px] font-medium mt-0.5",
+                  "text-[9px] font-medium mt-0.5",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}>
                   {tab.label}

@@ -7,6 +7,7 @@ import referralsRouter from "./referrals";
 import tokensRouter from "./tokens";
 import statsRouter from "./stats";
 import telegramRouter from "./telegram";
+import leaderboardRouter from "./leaderboard";
 
 const router: IRouter = Router();
 
@@ -19,5 +20,6 @@ router.use("/referrals", referralsRouter);
 router.use("/tokens", tokensRouter);
 router.use("/stats", statsRouter);
 router.use("/telegram", telegramRouter);
+router.use("/leaderboard", leaderboardRouter);
 
 export default router;
