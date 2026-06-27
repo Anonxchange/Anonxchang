@@ -1,7 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { supabase } from "../lib/supabase";
 
 const router = Router();
 
@@ -16,98 +14,86 @@ function generateReferralCode(): string {
 
 router.post("/register", async (req, res) => {
   const { telegramId, username, firstName, lastName, referralCode } = req.body ?? {};
-  if (!telegramId) {
-    return res.status(400).json({ error: "telegramId is required" });
-  }
+  if (!telegramId) return res.status(400).json({ error: "telegramId is required" });
 
-  const existing = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.telegramId, String(telegramId)))
-    .limit(1);
+  const { data: existing } = await supabase
+    .from("users")
+    .select("*")
+    .eq("telegram_id", String(telegramId))
+    .limit(1)
+    .single();
 
-  if (existing.length > 0) {
-    return res.status(200).json(formatUser(existing[0]));
-  }
+  if (existing) return res.status(200).json(formatUser(existing));
 
   let uniqueCode = generateReferralCode();
-  let attempts = 0;
-  while (attempts < 5) {
-    const conflict = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.referralCode, uniqueCode))
-      .limit(1);
-    if (conflict.length === 0) break;
+  for (let i = 0; i < 5; i++) {
+    const { data: conflict } = await supabase
+      .from("users")
+      .select("id")
+      .eq("referral_code", uniqueCode)
+      .single();
+    if (!conflict) break;
     uniqueCode = generateReferralCode();
-    attempts++;
   }
 
-  const [user] = await db
-    .insert(usersTable)
-    .values({
-      telegramId: String(telegramId),
+  const { data: user, error } = await supabase
+    .from("users")
+    .insert({
+      telegram_id: String(telegramId),
       username: username ?? null,
-      firstName: firstName ?? null,
-      lastName: lastName ?? null,
-      referralCode: uniqueCode,
-      referredBy: referralCode ?? null,
-      claimStatus: "pending",
-      totalRewards: "0",
+      first_name: firstName ?? null,
+      last_name: lastName ?? null,
+      referral_code: uniqueCode,
+      referred_by: referralCode ?? null,
+      claim_status: "pending",
+      total_rewards: "0",
     })
-    .returning();
+    .select()
+    .single();
 
+  if (error) return res.status(500).json({ error: error.message });
   return res.status(201).json(formatUser(user));
 });
 
 router.get("/:telegramId", async (req, res) => {
-  const { telegramId } = req.params;
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.telegramId, telegramId))
-    .limit(1);
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("telegram_id", req.params.telegramId)
+    .single();
 
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
-  }
-
+  if (!user) return res.status(404).json({ error: "User not found" });
   return res.json(formatUser(user));
 });
 
 router.patch("/:telegramId/wallet", async (req, res) => {
   const { walletAddress } = req.body ?? {};
-  if (!walletAddress || typeof walletAddress !== "string" || walletAddress.length !== 42) {
-    return res.status(400).json({ error: "Invalid wallet address" });
-  }
+  if (!walletAddress) return res.status(400).json({ error: "walletAddress required" });
 
-  const { telegramId } = req.params;
-  const [user] = await db
-    .update(usersTable)
-    .set({ walletAddress })
-    .where(eq(usersTable.telegramId, telegramId))
-    .returning();
+  const { data: user, error } = await supabase
+    .from("users")
+    .update({ wallet_address: String(walletAddress) })
+    .eq("telegram_id", req.params.telegramId)
+    .select()
+    .single();
 
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
-  }
-
+  if (error || !user) return res.status(404).json({ error: "User not found" });
   return res.json(formatUser(user));
 });
 
-function formatUser(user: typeof usersTable.$inferSelect) {
+function formatUser(u: any) {
   return {
-    id: user.id,
-    telegramId: user.telegramId,
-    username: user.username ?? null,
-    firstName: user.firstName ?? null,
-    lastName: user.lastName ?? null,
-    walletAddress: user.walletAddress ?? null,
-    referralCode: user.referralCode,
-    referredBy: user.referredBy ?? null,
-    claimStatus: user.claimStatus,
-    totalRewards: user.totalRewards,
-    createdAt: user.createdAt.toISOString(),
+    id: u.id,
+    telegramId: u.telegram_id,
+    username: u.username ?? null,
+    firstName: u.first_name ?? null,
+    lastName: u.last_name ?? null,
+    walletAddress: u.wallet_address ?? null,
+    referralCode: u.referral_code,
+    referredBy: u.referred_by ?? null,
+    claimStatus: u.claim_status,
+    totalRewards: u.total_rewards,
+    createdAt: u.created_at,
   };
 }
 

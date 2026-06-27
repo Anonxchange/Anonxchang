@@ -21,3 +21,9 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+SUPABASE_URL = "https://icfjyvuxxnmdyruoklej.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljZmp5dnV4eG5tZHlydW9rbGVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjUzNDk1NiwiZXhwIjoyMDk4MTEwOTU2fQ.Y5ugLqjSZb_Orogf28LG7NtFNDmRVedSBMlc00oSjRc"

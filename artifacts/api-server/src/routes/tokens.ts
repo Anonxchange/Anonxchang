@@ -1,28 +1,30 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { airdropTokensTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { supabase } from "../lib/supabase";
 
 const router = Router();
 
 router.get("/", async (_req, res) => {
-  const tokens = await db.select().from(airdropTokensTable);
+  const { data: tokens } = await supabase
+    .from("airdrop_tokens")
+    .select("*")
+    .order("is_featured", { ascending: false });
+
   return res.json(
-    tokens.map((t) => ({
+    (tokens ?? []).map((t: any) => ({
       id: t.id,
       symbol: t.symbol,
       name: t.name,
-      logoUrl: t.logoUrl,
+      logoUrl: t.logo_url,
       network: t.network,
-      totalSupply: t.totalSupply,
-      airdropAmount: t.airdropAmount,
-      feeRequired: t.feeRequired,
-      feeToken: t.feeToken,
-      claimDeadline: t.claimDeadline?.toISOString() ?? null,
-      totalParticipants: t.totalParticipants,
+      totalSupply: t.total_supply,
+      airdropAmount: t.airdrop_amount,
+      feeRequired: t.fee_required,
+      feeToken: t.fee_token,
+      claimDeadline: t.claim_deadline ?? null,
+      totalParticipants: t.total_participants,
       description: t.description,
       website: t.website ?? null,
-      isFeatured: t.isFeatured,
+      isFeatured: t.is_featured,
     }))
   );
 });

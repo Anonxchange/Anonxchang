@@ -1,7 +1,5 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { claimsTable, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { supabase } from "../lib/supabase";
 
 const router = Router();
 
@@ -11,64 +9,59 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const existing = await db
-    .select()
-    .from(claimsTable)
-    .where(eq(claimsTable.telegramId, String(telegramId)))
-    .limit(1);
+  const { data: existing } = await supabase
+    .from("claims")
+    .select("id")
+    .eq("telegram_id", String(telegramId))
+    .single();
 
-  if (existing.length > 0) {
-    return res.status(400).json({ error: "Already claimed" });
-  }
+  if (existing) return res.status(400).json({ error: "Already claimed" });
 
-  const tokenAmount = "50000";
-
-  const [claim] = await db
-    .insert(claimsTable)
-    .values({
-      telegramId: String(telegramId),
-      walletAddress: String(walletAddress),
-      tokenAmount,
-      feePaid: String(feePaid),
-      txHash: String(txHash),
-      tokenSymbol: String(tokenSymbol),
+  const { data: claim, error } = await supabase
+    .from("claims")
+    .insert({
+      telegram_id: String(telegramId),
+      wallet_address: String(walletAddress),
+      token_amount: "50000",
+      fee_paid: String(feePaid),
+      tx_hash: String(txHash),
+      token_symbol: String(tokenSymbol),
       status: "pending",
     })
-    .returning();
+    .select()
+    .single();
 
-  await db
-    .update(usersTable)
-    .set({ claimStatus: "fee_paid", walletAddress: String(walletAddress) })
-    .where(eq(usersTable.telegramId, String(telegramId)));
+  if (error) return res.status(500).json({ error: error.message });
+
+  await supabase
+    .from("users")
+    .update({ claim_status: "fee_paid", wallet_address: String(walletAddress) })
+    .eq("telegram_id", String(telegramId));
 
   return res.status(201).json(formatClaim(claim));
 });
 
 router.get("/:telegramId", async (req, res) => {
-  const { telegramId } = req.params;
-  const [claim] = await db
-    .select()
-    .from(claimsTable)
-    .where(eq(claimsTable.telegramId, telegramId))
-    .limit(1);
+  const { data: claim } = await supabase
+    .from("claims")
+    .select("*")
+    .eq("telegram_id", req.params.telegramId)
+    .single();
 
-  if (!claim) {
-    return res.status(404).json({ error: "No claim found" });
-  }
-
+  if (!claim) return res.status(404).json({ error: "No claim found" });
   return res.json(formatClaim(claim));
 });
 
-function formatClaim(claim: typeof claimsTable.$inferSelect) {
+function formatClaim(c: any) {
   return {
-    id: claim.id,
-    telegramId: claim.telegramId,
-    walletAddress: claim.walletAddress,
-    tokenAmount: claim.tokenAmount,
-    feePaid: claim.feePaid,
-    txHash: claim.txHash,
-    status: claim.status,
-    createdAt: claim.createdAt.toISOString(),
+    id: c.id,
+    telegramId: c.telegram_id,
+    walletAddress: c.wallet_address,
+    tokenAmount: c.token_amount,
+    feePaid: c.fee_paid,
+    txHash: c.tx_hash,
+    status: c.status,
+    createdAt: c.created_at,
   };
 }
 

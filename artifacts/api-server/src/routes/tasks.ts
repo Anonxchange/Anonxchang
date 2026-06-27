@@ -1,47 +1,40 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { tasksTable, userTasksTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { supabase } from "../lib/supabase";
 
 const router = Router();
 
 router.get("/", async (_req, res) => {
-  const tasks = await db
-    .select()
-    .from(tasksTable)
-    .where(eq(tasksTable.isActive, true));
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("is_active", true);
 
-  return res.json(tasks.map(formatTask));
+  return res.json((tasks ?? []).map(formatTask));
 });
 
 router.get("/users/:telegramId/tasks", async (req, res) => {
   const { telegramId } = req.params;
 
-  const tasks = await db
-    .select()
-    .from(tasksTable)
-    .where(eq(tasksTable.isActive, true));
+  const [{ data: tasks }, { data: userTasks }] = await Promise.all([
+    supabase.from("tasks").select("*").eq("is_active", true),
+    supabase.from("user_tasks").select("*").eq("telegram_id", telegramId),
+  ]);
 
-  const userTasks = await db
-    .select()
-    .from(userTasksTable)
-    .where(eq(userTasksTable.telegramId, telegramId));
+  const userTaskMap = new Map((userTasks ?? []).map((ut: any) => [ut.task_id, ut]));
 
-  const userTaskMap = new Map(userTasks.map((ut) => [ut.taskId, ut]));
-
-  const result = tasks.map((task) => {
-    const ut = userTaskMap.get(task.id);
-    return {
-      taskId: task.id,
-      telegramId,
-      isCompleted: ut?.isCompleted ?? false,
-      completedAt: ut?.completedAt?.toISOString() ?? null,
-      proof: ut?.proof ?? null,
-      task: formatTask(task),
-    };
-  });
-
-  return res.json(result);
+  return res.json(
+    (tasks ?? []).map((task: any) => {
+      const ut = userTaskMap.get(task.id) as any;
+      return {
+        taskId: task.id,
+        telegramId,
+        isCompleted: ut?.is_completed ?? false,
+        completedAt: ut?.completed_at ?? null,
+        proof: ut?.proof ?? null,
+        task: formatTask(task),
+      };
+    })
+  );
 });
 
 router.post("/users/:telegramId/tasks/:taskId/complete", async (req, res) => {
@@ -49,73 +42,61 @@ router.post("/users/:telegramId/tasks/:taskId/complete", async (req, res) => {
   const taskIdNum = parseInt(taskId, 10);
   const proof = req.body?.proof ?? null;
 
-  const [task] = await db
-    .select()
-    .from(tasksTable)
-    .where(eq(tasksTable.id, taskIdNum))
-    .limit(1);
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("id", taskIdNum)
+    .single();
 
-  if (!task) {
-    return res.status(404).json({ error: "Task not found" });
-  }
+  if (!task) return res.status(404).json({ error: "Task not found" });
 
-  const existing = await db
-    .select()
-    .from(userTasksTable)
-    .where(
-      and(
-        eq(userTasksTable.telegramId, telegramId),
-        eq(userTasksTable.taskId, taskIdNum)
-      )
-    )
-    .limit(1);
+  const { data: existing } = await supabase
+    .from("user_tasks")
+    .select("id")
+    .eq("telegram_id", telegramId)
+    .eq("task_id", taskIdNum)
+    .single();
 
-  let userTask;
-  if (existing.length > 0) {
-    [userTask] = await db
-      .update(userTasksTable)
-      .set({ isCompleted: true, completedAt: new Date(), proof })
-      .where(
-        and(
-          eq(userTasksTable.telegramId, telegramId),
-          eq(userTasksTable.taskId, taskIdNum)
-        )
-      )
-      .returning();
+  let userTask: any;
+  if (existing) {
+    const { data } = await supabase
+      .from("user_tasks")
+      .update({ is_completed: true, completed_at: new Date().toISOString(), proof })
+      .eq("telegram_id", telegramId)
+      .eq("task_id", taskIdNum)
+      .select()
+      .single();
+    userTask = data;
   } else {
-    [userTask] = await db
-      .insert(userTasksTable)
-      .values({
-        telegramId,
-        taskId: taskIdNum,
-        isCompleted: true,
-        completedAt: new Date(),
-        proof,
-      })
-      .returning();
+    const { data } = await supabase
+      .from("user_tasks")
+      .insert({ telegram_id: telegramId, task_id: taskIdNum, is_completed: true, completed_at: new Date().toISOString(), proof })
+      .select()
+      .single();
+    userTask = data;
   }
 
   return res.json({
-    taskId: userTask.taskId,
-    telegramId: userTask.telegramId,
-    isCompleted: userTask.isCompleted,
-    completedAt: userTask.completedAt?.toISOString() ?? null,
+    taskId: userTask.task_id,
+    telegramId: userTask.telegram_id,
+    isCompleted: userTask.is_completed,
+    completedAt: userTask.completed_at ?? null,
     proof: userTask.proof ?? null,
     task: formatTask(task),
   });
 });
 
-function formatTask(task: typeof tasksTable.$inferSelect) {
+function formatTask(t: any) {
   return {
-    id: task.id,
-    type: task.type,
-    title: task.title,
-    description: task.description,
-    rewardAmount: task.rewardAmount,
-    rewardToken: task.rewardToken,
-    requiredCount: task.requiredCount ?? null,
-    actionUrl: task.actionUrl ?? null,
-    isActive: task.isActive,
+    id: t.id,
+    type: t.type,
+    title: t.title,
+    description: t.description,
+    rewardAmount: t.reward_amount,
+    rewardToken: t.reward_token,
+    requiredCount: t.required_count ?? null,
+    actionUrl: t.action_url ?? null,
+    isActive: t.is_active,
   };
 }
 

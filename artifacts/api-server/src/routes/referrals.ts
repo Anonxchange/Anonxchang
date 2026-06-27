@@ -1,51 +1,43 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { supabase } from "../lib/supabase";
 
 const router = Router();
 
 router.get("/:telegramId", async (req, res) => {
   const { telegramId } = req.params;
 
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.telegramId, telegramId))
-    .limit(1);
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("telegram_id", telegramId)
+    .single();
 
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
-  }
+  if (!user) return res.status(404).json({ error: "User not found" });
 
-  const referrals = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.referredBy, user.referralCode));
+  const { data: referrals } = await supabase
+    .from("users")
+    .select("*")
+    .eq("referred_by", user.referral_code);
 
-  const qualifiedReferrals = referrals.filter(
-    (r) => r.claimStatus === "fee_paid" || r.claimStatus === "claimed"
+  const qualified = (referrals ?? []).filter(
+    (r: any) => r.claim_status === "fee_paid" || r.claim_status === "claimed"
   );
 
-  const rewardPerReferral = 5000;
-  const pendingReward = (qualifiedReferrals.length * rewardPerReferral).toString();
-
   const botUsername = process.env.TELEGRAM_BOT_USERNAME || "your_bot";
-  const referralLink = `https://t.me/${botUsername}?start=${user.referralCode}`;
 
   return res.json({
     telegramId,
-    referralCode: user.referralCode,
-    referralLink,
-    totalReferrals: referrals.length,
-    qualifiedReferrals: qualifiedReferrals.length,
-    pendingReward,
+    referralCode: user.referral_code,
+    referralLink: `https://t.me/${botUsername}?start=${user.referral_code}`,
+    totalReferrals: (referrals ?? []).length,
+    qualifiedReferrals: qualified.length,
+    pendingReward: String(qualified.length * 5000),
     claimedReward: "0",
-    referrals: referrals.map((r) => ({
+    referrals: (referrals ?? []).map((r: any) => ({
       username: r.username ?? null,
-      firstName: r.firstName ?? null,
-      joinedAt: r.createdAt.toISOString(),
-      hasClaimed: r.claimStatus === "fee_paid" || r.claimStatus === "claimed",
+      firstName: r.first_name ?? null,
+      joinedAt: r.created_at,
+      hasClaimed: r.claim_status === "fee_paid" || r.claim_status === "claimed",
     })),
   });
 });

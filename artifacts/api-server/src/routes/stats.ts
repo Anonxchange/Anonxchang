@@ -1,39 +1,36 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { usersTable, claimsTable } from "@workspace/db";
-import { airdropTokensTable } from "@workspace/db";
-import { eq, count, sql } from "drizzle-orm";
+import { supabase } from "../lib/supabase";
 
 const router = Router();
 
 router.get("/", async (_req, res) => {
-  const [userCount] = await db
-    .select({ count: count() })
-    .from(usersTable);
+  const [
+    { count: totalParticipants },
+    { data: claims },
+    { count: activeAirdrops },
+    { count: totalReferrals },
+  ] = await Promise.all([
+    supabase.from("users").select("*", { count: "exact", head: true }),
+    supabase.from("claims").select("token_amount, fee_paid"),
+    supabase.from("airdrop_tokens").select("*", { count: "exact", head: true }).eq("is_featured", true),
+    supabase.from("users").select("*", { count: "exact", head: true }).not("referred_by", "is", null),
+  ]);
 
-  const [claimStats] = await db
-    .select({
-      totalClaimed: sql<string>`coalesce(sum(cast(token_amount as numeric)), 0)::text`,
-      totalFees: sql<string>`coalesce(sum(cast(fee_paid as numeric)), 0)::text`,
-    })
-    .from(claimsTable);
-
-  const [tokenCount] = await db
-    .select({ count: count() })
-    .from(airdropTokensTable)
-    .where(eq(airdropTokensTable.isFeatured, true));
-
-  const [referralCount] = await db
-    .select({ count: count() })
-    .from(usersTable)
-    .where(sql`referred_by is not null`);
+  const totalClaimed = (claims ?? []).reduce(
+    (sum: number, c: any) => sum + parseFloat(c.token_amount || "0"),
+    0
+  );
+  const totalFees = (claims ?? []).reduce(
+    (sum: number, c: any) => sum + parseFloat(c.fee_paid || "0"),
+    0
+  );
 
   return res.json({
-    totalParticipants: userCount.count,
-    totalClaimed: claimStats.totalClaimed ?? "0",
-    totalFeesCollected: claimStats.totalFees ?? "0",
-    activeAirdrops: tokenCount.count,
-    totalReferrals: referralCount.count,
+    totalParticipants: totalParticipants ?? 0,
+    totalClaimed: totalClaimed.toString(),
+    totalFeesCollected: totalFees.toFixed(6),
+    activeAirdrops: activeAirdrops ?? 0,
+    totalReferrals: totalReferrals ?? 0,
   });
 });
 
