@@ -121,6 +121,10 @@ export default function Home() {
   const isClaimed = claimSubmitted || claimStatus?.status === "confirmed";
   const isBusy = isSending || isConfirming;
 
+  const BASE_ALLOCATION = 900_000;
+  const taskEarnings = parseInt(user?.totalRewards || "0", 10);
+  const totalNova = BASE_ALLOCATION + taskEarnings;
+
   return (
     <div className="flex flex-col gap-5 p-4 md:p-8 max-w-2xl mx-auto w-full">
 
@@ -195,6 +199,47 @@ export default function Home() {
               <span className="text-white font-bold text-sm">⏰ Claim period has ended</span>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* ── NOVA Earnings Balance ───────────────────────── */}
+      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-600 to-violet-700 p-4 text-white shadow-md">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <img src="https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png" alt="NOVA" className="w-7 h-7 rounded-full border border-white/30" />
+            <span className="text-sm font-bold text-white/90 uppercase tracking-wider">Your NOVA Balance</span>
+          </div>
+          {taskEarnings > 0 && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-400/20 border border-green-300/30 text-green-200 uppercase tracking-wide">
+              +{taskEarnings.toLocaleString()} earned
+            </span>
+          )}
+        </div>
+
+        <div className="text-4xl font-black tabular-nums tracking-tight mb-1">
+          {totalNova.toLocaleString()}
+          <span className="text-lg font-semibold text-white/60 ml-1.5">NOVA</span>
+        </div>
+
+        <div className="flex gap-3 mt-3 pt-3 border-t border-white/20">
+          <div className="flex-1">
+            <div className="text-white/50 text-[10px] uppercase tracking-wider mb-0.5">Base Airdrop</div>
+            <div className="text-white font-bold text-sm">{BASE_ALLOCATION.toLocaleString()}</div>
+          </div>
+          <div className="w-px bg-white/20" />
+          <div className="flex-1">
+            <div className="text-white/50 text-[10px] uppercase tracking-wider mb-0.5">Task Rewards</div>
+            <div className={`font-bold text-sm ${taskEarnings > 0 ? "text-green-300" : "text-white/40"}`}>
+              +{taskEarnings.toLocaleString()}
+            </div>
+          </div>
+          <div className="w-px bg-white/20" />
+          <div className="flex-1 text-right">
+            <div className="text-white/50 text-[10px] uppercase tracking-wider mb-0.5">Est. Value</div>
+            <div className="text-white font-bold text-sm">
+              {(totalNova * ESTIMATED_VALUE_PER_TOKEN).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 })}
+            </div>
+          </div>
         </div>
       </div>
 

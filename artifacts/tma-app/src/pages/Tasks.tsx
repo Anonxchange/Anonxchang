@@ -1,5 +1,5 @@
 import { useTelegram } from "@/components/TelegramProvider";
-import { useListTasks, useGetUserTasks, useCompleteTask, useGetReferralStats, getGetUserTasksQueryKey } from "@workspace/api-client-react";
+import { useListTasks, useGetUserTasks, useCompleteTask, useGetReferralStats, getGetUserTasksQueryKey, getGetUserQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,7 +26,7 @@ const colorMap: Record<string, string> = {
 };
 
 export default function Tasks() {
-  const { telegramId } = useTelegram();
+  const { telegramId, user } = useTelegram();
   const queryClient = useQueryClient();
   const [completingTaskId, setCompletingTaskId] = useState<number | null>(null);
 
@@ -42,6 +42,7 @@ export default function Tasks() {
 
   const MAX_REFERRALS = 10;
   const qualifiedReferrals = referralStats?.qualifiedReferrals ?? 0;
+  const taskEarnings = parseInt(user?.totalRewards || "0", 10);
 
   const handleCompleteTask = (taskId: number, actionUrl?: string | null) => {
     if (actionUrl) window.open(actionUrl, '_blank');
@@ -51,7 +52,8 @@ export default function Tasks() {
       completeTask.mutate({ telegramId, taskId, data: {} }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
-          toast.success("Task verified! Reward added to your allocation.");
+          queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
+          toast.success("Task verified! Reward added to your balance.");
           setCompletingTaskId(null);
         },
         onError: (err: any) => {
@@ -90,15 +92,31 @@ export default function Tasks() {
         <p className="text-muted-foreground text-sm">Complete tasks to boost your 900,000 NOVA allocation.</p>
       </div>
 
-      {/* Progress summary */}
-      <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100">
-        <div>
-          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5">Tasks Completed</div>
-          <div className="text-2xl font-black text-indigo-600">{completedCount} <span className="text-base font-semibold text-muted-foreground">/ {totalCount}</span></div>
+      {/* NOVA Earnings Balance */}
+      <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 p-4 text-white shadow-md">
+        <div className="flex items-center gap-2 mb-2">
+          <img src="https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png" alt="NOVA" className="w-5 h-5 rounded-full border border-white/30" />
+          <span className="text-[10px] font-bold text-white/70 uppercase tracking-widest">Your NOVA Balance</span>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5">Base Allocation</div>
-          <div className="text-xl font-black text-violet-600">900,000 <span className="text-xs font-semibold text-muted-foreground">NOVA</span></div>
+        <div className="text-3xl font-black tabular-nums">
+          {(900_000 + taskEarnings).toLocaleString()}
+          <span className="text-base font-semibold text-white/60 ml-1.5">NOVA</span>
+        </div>
+        <div className="flex gap-3 mt-3 pt-3 border-t border-white/20 text-xs">
+          <div className="flex-1">
+            <div className="text-white/50 uppercase tracking-wider mb-0.5">Base</div>
+            <div className="font-bold">900,000</div>
+          </div>
+          <div className="w-px bg-white/20" />
+          <div className="flex-1">
+            <div className="text-white/50 uppercase tracking-wider mb-0.5">Task Rewards</div>
+            <div className={`font-bold ${taskEarnings > 0 ? "text-green-300" : "text-white/40"}`}>+{taskEarnings.toLocaleString()}</div>
+          </div>
+          <div className="w-px bg-white/20" />
+          <div className="flex-1 text-right">
+            <div className="text-white/50 uppercase tracking-wider mb-0.5">Tasks Done</div>
+            <div className="font-bold">{completedCount} / {totalCount}</div>
+          </div>
         </div>
       </div>
 
