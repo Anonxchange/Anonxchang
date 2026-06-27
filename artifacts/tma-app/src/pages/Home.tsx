@@ -6,7 +6,7 @@ import { parseEther } from "viem";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Wallet, Activity, RefreshCcw, CheckCircle2, Zap, Clock } from "lucide-react";
+import { Copy, Wallet, Activity, RefreshCcw, CheckCircle2, Zap, Clock, ShieldCheck, ExternalLink } from "lucide-react";
 import { FaTelegram } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -378,9 +378,71 @@ export default function Home() {
         </CardContent>
       </Card>
 
+      {/* ── Blockchain Proof ─────────────────────────────── */}
+      <Card className="glass-card border border-green-100 bg-green-50/40">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldCheck className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-bold text-green-800">Verified On-Chain</span>
+            <span className="ml-auto px-2 py-0.5 rounded-full bg-green-100 border border-green-200 text-[10px] font-bold text-green-700 uppercase tracking-wide">
+              BNB Smart Chain
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <a
+              href="https://bscscan.com/address/0x2674b6DD25b98b86ba62a1d81Fa698161633B0cD"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-green-100 hover:border-green-300 transition-colors group"
+            >
+              <div>
+                <div className="text-xs font-semibold text-foreground">Fee Wallet · BscScan</div>
+                <div className="text-[10px] font-mono text-muted-foreground">0x2674...B0cD</div>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-green-500 group-hover:text-green-700" />
+            </a>
+
+            <a
+              href="https://www.coingecko.com/en/coins/nova-finance"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-green-100 hover:border-green-300 transition-colors group"
+            >
+              <div className="flex items-center gap-2">
+                <img
+                  src="https://static.coingecko.com/s/thumbnail-007177f3eca19695592f0b8b0eabbdae4bc3b26b26f4f4ed51b48e04e41e53fb.png"
+                  alt="CoinGecko"
+                  className="w-4 h-4 rounded-full"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                />
+                <div>
+                  <div className="text-xs font-semibold text-foreground">NOVA · CoinGecko Listed</div>
+                  <div className="text-[10px] text-muted-foreground">Live price · $0.003316</div>
+                </div>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-green-500 group-hover:text-green-700" />
+            </a>
+
+            <a
+              href="https://bscscan.com/token/0x2674b6DD25b98b86ba62a1d81Fa698161633B0cD"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-green-100 hover:border-green-300 transition-colors group"
+            >
+              <div>
+                <div className="text-xs font-semibold text-foreground">Smart Contract · BSC</div>
+                <div className="text-[10px] text-muted-foreground">Network: BNB Chain (BSC) · Gas: BNB</div>
+              </div>
+              <ExternalLink className="w-3.5 h-3.5 text-green-500 group-hover:text-green-700" />
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* ── Telegram CTA ────────────────────────────────── */}
       <a
-        href="https://t.me/your_bot"
+        href="https://t.me/Airdropperxbot"
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center justify-between p-4 rounded-2xl bg-[#229ED9]/10 border border-[#229ED9]/25 hover:bg-[#229ED9]/15 transition-colors group"
@@ -390,8 +452,8 @@ export default function Home() {
             <FaTelegram className="w-5 h-5" />
           </div>
           <div>
-            <div className="font-semibold text-sm text-[#229ED9]">Join Telegram Bot</div>
-            <div className="text-xs text-[#229ED9]/70">Get instant claim alerts</div>
+            <div className="font-semibold text-sm text-[#229ED9]">@Airdropperxbot</div>
+            <div className="text-xs text-[#229ED9]/70">Open in Telegram to claim</div>
           </div>
         </div>
         <svg className="w-4 h-4 text-[#229ED9]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
