@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useRegisterUser, useGetUser, getGetUserQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -13,13 +13,12 @@ const TelegramContext = createContext<TelegramContextType | undefined>(undefined
 export function TelegramProvider({ children }: { children: React.ReactNode }) {
   const [telegramId, setTelegramId] = useState<string>("demo_user_123");
   const queryClient = useQueryClient();
+  const didRegister = useRef(false);
 
   useEffect(() => {
-    // Initialize Telegram WebApp
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
-      
       const initDataUnsafe = window.Telegram.WebApp.initDataUnsafe;
       if (initDataUnsafe?.user?.id) {
         setTelegramId(initDataUnsafe.user.id.toString());
@@ -27,36 +26,39 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const { data: user, isLoading } = useGetUser(telegramId, {
+  const { data: user, isLoading, isError } = useGetUser(telegramId, {
     query: {
       enabled: !!telegramId,
-      queryKey: getGetUserQueryKey(telegramId)
+      retry: false,
+      queryKey: getGetUserQueryKey(telegramId),
     }
   });
 
   const registerUser = useRegisterUser();
 
   useEffect(() => {
-    if (!isLoading && !user && telegramId) {
-      // Auto-register mock user
+    if (!isLoading && !user && telegramId && isError && !didRegister.current) {
+      didRegister.current = true;
       registerUser.mutate({
         data: {
           telegramId,
           username: "demouser",
           firstName: "Demo",
           lastName: "User",
-          referralCode: "DEMO_" + Math.random().toString(36).substring(7)
         }
       }, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
+        },
+        onError: () => {
+          didRegister.current = false;
         }
       });
     }
-  }, [isLoading, user, telegramId, registerUser, queryClient]);
+  }, [isLoading, user, telegramId, isError]);
 
   return (
-    <TelegramContext.Provider value={{ telegramId, user, isLoading }}>
+    <TelegramContext.Provider value={{ telegramId, user: user ?? null, isLoading }}>
       {children}
     </TelegramContext.Provider>
   );
