@@ -103,7 +103,7 @@ export default function Referral() {
             </Button>
           </div>
           <a
-            href={`https://t.me/share/url?url=${encodeURIComponent(stats?.referralLink || `https://t.me/Airdropperxbot?start=${user?.referralCode || ""}`)}&text=${encodeURIComponent("🚀 Join NOVA Airdrop and claim 3,000,000 NOVA tokens for free!")}`}
+            href={`https://t.me/share/url?url=${encodeURIComponent(stats?.referralLink || `https://t.me/Airdropperxbot?start=${user?.referralCode || ""}`)}&text=${encodeURIComponent("🚀 Join NOVA Airdrop and claim 900,000 NOVA tokens for free!")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#229ED9] text-white text-sm font-semibold hover:bg-[#1a8bbf] transition-colors"

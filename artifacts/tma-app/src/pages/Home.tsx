@@ -21,7 +21,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 
-const TOTAL_ALLOCATION = 3_000_000;
+const TOTAL_ALLOCATION = 900_000;
 const ESTIMATED_VALUE_PER_TOKEN = 0.003316;
 const CLAIM_DEADLINE = new Date("2026-07-25T23:59:59Z");
 const FEE_RECIPIENT = "0x2674b6DD25b98b86ba62a1d81Fa698161633B0cD" as `0x${string}`;
@@ -95,7 +95,7 @@ export default function Home() {
           tokenSymbol: "NOVA",
         }
       }, {
-        onSuccess: () => toast.success("Claim recorded! Your 3,000,000 NOVA is confirmed."),
+        onSuccess: () => toast.success("Claim recorded! Your 900,000 NOVA is confirmed."),
         onError: () => toast.error("Transaction sent but claim recording failed. Contact support."),
       });
     }
@@ -272,21 +272,21 @@ export default function Home() {
             <Drawer>
               <DrawerTrigger asChild>
                 <Button className="w-full h-12 text-base bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-md border-0">
-                  Initiate Claim → 3,000,000 NOVA
+                  Initiate Claim → 900,000 NOVA
                 </Button>
               </DrawerTrigger>
               <DrawerContent className="bg-white border-border">
                 <DrawerHeader>
                   <DrawerTitle>Confirm Claim Transaction</DrawerTitle>
                   <DrawerDescription>
-                    Your wallet will prompt you to send {GAS_FEE_BNB} BNB as a gas fee. Once confirmed on-chain, your 3,000,000 NOVA allocation is locked in.
+                    Your wallet will prompt you to send {GAS_FEE_BNB} BNB as a gas fee. Once confirmed on-chain, your 900,000 NOVA allocation is locked in.
                   </DrawerDescription>
                 </DrawerHeader>
                 <div className="p-4 flex flex-col gap-3">
                   {/* Allocation */}
                   <div className="flex justify-between items-center p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
                     <span className="text-muted-foreground text-sm">Your Allocation</span>
-                    <span className="font-black text-lg text-indigo-600">3,000,000 NOVA</span>
+                    <span className="font-black text-lg text-indigo-600">900,000 NOVA</span>
                   </div>
                   {/* Est value */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl">

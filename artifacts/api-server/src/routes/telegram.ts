@@ -71,7 +71,7 @@ async function handleStart(chatId: number, tgUser: any, payload?: string) {
   });
 
   const firstName = tgUser.first_name || "there";
-  const allocation = "3,000,000";
+  const allocation = "900,000";
 
   if (isNew) {
     await sendMessage(
@@ -143,7 +143,7 @@ async function handleStatus(chatId: number, telegramId: number) {
   await sendMessage(
     chatId,
     `📊 <b>Your NOVA Airdrop Status</b>\n\n` +
-    `🪙 Base Allocation: <b>3,000,000 NOVA</b>\n` +
+    `🪙 Base Allocation: <b>900,000 NOVA</b>\n` +
     `🎁 Referral Bonus: <b>+${bonusNova.toLocaleString()} NOVA</b>\n` +
     `✅ Tasks Completed: <b>${tasksDone}</b>\n` +
     `👥 Referrals: <b>${refs}</b>\n` +

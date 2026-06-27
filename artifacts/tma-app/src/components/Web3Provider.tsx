@@ -9,7 +9,7 @@ const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'b56e18d47c72
 
 const metadata = {
   name: 'NOVA Airdrop',
-  description: 'Claim your 3,000,000 NOVA tokens',
+  description: 'Claim your 900,000 NOVA tokens',
   url: 'https://anonxchang--dicee142.replit.app',
   icons: ['https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png']
 }

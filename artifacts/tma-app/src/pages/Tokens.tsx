@@ -52,7 +52,7 @@ export default function Tokens() {
             <span className="font-black text-lg">NOVA Token</span>
             <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider border border-white/30">Active</span>
           </div>
-          <div className="text-white/70 text-xs mb-1">Your allocation: <span className="text-white font-bold">3,000,000 NOVA</span></div>
+          <div className="text-white/70 text-xs mb-1">Your allocation: <span className="text-white font-bold">900,000 NOVA</span></div>
         </div>
         <a
           href="https://t.me/Airdropperxbot"

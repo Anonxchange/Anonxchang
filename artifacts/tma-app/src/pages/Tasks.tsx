@@ -81,7 +81,7 @@ export default function Tasks() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black tracking-tight mb-1 neon-text">Airdrop Tasks</h1>
-        <p className="text-muted-foreground text-sm">Complete tasks to boost your 3,000,000 NOVA allocation.</p>
+        <p className="text-muted-foreground text-sm">Complete tasks to boost your 900,000 NOVA allocation.</p>
       </div>
 
       {/* Progress summary */}
@@ -92,7 +92,7 @@ export default function Tasks() {
         </div>
         <div className="text-right">
           <div className="text-xs text-muted-foreground uppercase tracking-wider mb-0.5">Base Allocation</div>
-          <div className="text-xl font-black text-violet-600">3,000,000 <span className="text-xs font-semibold text-muted-foreground">NOVA</span></div>
+          <div className="text-xl font-black text-violet-600">900,000 <span className="text-xs font-semibold text-muted-foreground">NOVA</span></div>
         </div>
       </div>
 
