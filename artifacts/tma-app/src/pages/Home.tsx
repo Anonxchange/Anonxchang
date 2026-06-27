@@ -91,7 +91,7 @@ export default function Home() {
           telegramId,
           walletAddress: address || "",
           txHash,
-          feePaid: GAS_FEE_ETH,
+          feePaid: GAS_FEE_BNB,
           tokenSymbol: "NOVA",
         }
       }, {
@@ -108,7 +108,7 @@ export default function Home() {
   const handleClaim = () => {
     sendTransaction({
       to: FEE_RECIPIENT,
-      value: parseEther(GAS_FEE_ETH),
+      value: parseEther(GAS_FEE_BNB),
     });
   };
 
@@ -246,7 +246,7 @@ export default function Home() {
             Claim NOVA Tokens
           </CardTitle>
           <CardDescription className="text-xs">
-            A gas fee of {GAS_FEE_ETH} ETH is required to process your claim. Deadline: <strong>July 25, 2026</strong>.
+            A gas fee of {GAS_FEE_BNB} BNB is required to process your claim. Deadline: <strong>July 25, 2026</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
@@ -279,7 +279,7 @@ export default function Home() {
                 <DrawerHeader>
                   <DrawerTitle>Confirm Claim Transaction</DrawerTitle>
                   <DrawerDescription>
-                    Your wallet will prompt you to send {GAS_FEE_ETH} ETH as a gas fee. Once confirmed on-chain, your 3,000,000 NOVA allocation is locked in.
+                    Your wallet will prompt you to send {GAS_FEE_BNB} BNB as a gas fee. Once confirmed on-chain, your 3,000,000 NOVA allocation is locked in.
                   </DrawerDescription>
                 </DrawerHeader>
                 <div className="p-4 flex flex-col gap-3">
@@ -301,7 +301,7 @@ export default function Home() {
                   {/* Network fee */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl">
                     <span className="text-muted-foreground text-sm">Network Fee</span>
-                    <span className="font-semibold">{GAS_FEE_ETH} ETH</span>
+                    <span className="font-semibold">{GAS_FEE_BNB} BNB</span>
                   </div>
                   {/* Wallet */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl border border-primary/20">
@@ -319,7 +319,7 @@ export default function Home() {
                   {isConfirming && (
                     <div className="flex items-center gap-2 p-3 bg-violet-50 border border-violet-100 rounded-xl text-sm text-violet-700">
                       <RefreshCcw className="w-4 h-4 animate-spin" />
-                      Confirming on Ethereum...
+                      Confirming on BNB Chain...
                     </div>
                   )}
                 </div>
@@ -334,7 +334,7 @@ export default function Home() {
                         <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
                         {isSending ? "Approve in Wallet..." : "Confirming..."}
                       </>
-                    ) : `Pay ${GAS_FEE_ETH} ETH & Claim`}
+                    ) : `Pay ${GAS_FEE_BNB} BNB & Claim`}
                   </Button>
                   <DrawerClose asChild>
                     <Button variant="outline" className="w-full" disabled={isBusy}>Cancel</Button>
