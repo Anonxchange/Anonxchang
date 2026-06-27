@@ -138,21 +138,33 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tight">NOVA Airdrop</h1>
-              <p className="text-white/70 text-xs">Next-gen DeFi Terminal</p>
+              <p className="text-white/70 text-xs">15% of total supply · Early community distribution</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-              <div className="text-white/60 text-xs mb-1 uppercase tracking-wider">Your Allocation</div>
-              <div className="text-white font-black text-2xl tabular-nums">{TOTAL_ALLOCATION.toLocaleString()}</div>
-              <div className="text-white/70 text-xs mt-0.5">NOVA tokens</div>
+          {/* 3-stat row */}
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+              <div className="text-white/60 text-[10px] mb-0.5 uppercase tracking-wider">Your Share</div>
+              <div className="text-white font-black text-base tabular-nums">900K</div>
+              <div className="text-white/70 text-[10px]">NOVA</div>
             </div>
-            <div className="bg-white/15 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
-              <div className="text-white/60 text-xs mb-1 uppercase tracking-wider">Claim Value</div>
-              <div className="text-white font-black text-2xl">{estimatedUSD}</div>
-              <div className="text-white/70 text-xs mt-0.5">at current price</div>
+            <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+              <div className="text-white/60 text-[10px] mb-0.5 uppercase tracking-wider">Pool Size</div>
+              <div className="text-white font-black text-base">150M</div>
+              <div className="text-white/70 text-[10px]">NOVA reserved</div>
             </div>
+            <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3 border border-white/20">
+              <div className="text-white/60 text-[10px] mb-0.5 uppercase tracking-wider">Slots Left</div>
+              <div className="text-white font-black text-base text-yellow-300">167</div>
+              <div className="text-white/70 text-[10px]">of 167 total</div>
+            </div>
+          </div>
+
+          {/* Value row */}
+          <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 flex items-center justify-between mb-3">
+            <span className="text-white/70 text-xs">Your allocation value</span>
+            <span className="text-white font-black text-sm">{estimatedUSD} <span className="text-white/60 font-normal text-xs">at current price</span></span>
           </div>
 
           {/* Deadline countdown */}
@@ -234,6 +246,60 @@ export default function Home() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* ── About This Airdrop ──────────────────────────── */}
+      <Card className="glass-card border border-indigo-100 bg-indigo-50/30">
+        <CardContent className="p-4">
+          <div className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5" /> Why 900,000 NOVA?
+          </div>
+
+          {/* Tokenomics bar */}
+          <div className="mb-3">
+            <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+              <span>Total Supply: 1,000,000,000 NOVA</span>
+              <span className="font-semibold text-indigo-600">Community = 15%</span>
+            </div>
+            <div className="flex h-2.5 rounded-full overflow-hidden gap-px">
+              <div className="bg-indigo-500 flex-shrink-0" style={{ width: "15%" }} title="Community Airdrop 15%" />
+              <div className="bg-violet-400 flex-shrink-0" style={{ width: "20%" }} title="Team 20%" />
+              <div className="bg-cyan-400 flex-shrink-0" style={{ width: "25%" }} title="Ecosystem 25%" />
+              <div className="bg-emerald-400 flex-shrink-0" style={{ width: "10%" }} title="Marketing 10%" />
+              <div className="bg-slate-200 flex-1" title="Reserved 30%" />
+            </div>
+            <div className="flex gap-3 mt-1.5 flex-wrap">
+              {[
+                { color: "bg-indigo-500", label: "Community 15%" },
+                { color: "bg-violet-400", label: "Team 20%" },
+                { color: "bg-cyan-400",   label: "Ecosystem 25%" },
+                { color: "bg-emerald-400",label: "Marketing 10%" },
+                { color: "bg-slate-300",  label: "Reserved 30%" },
+              ].map(d => (
+                <div key={d.label} className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-sm flex-shrink-0 ${d.color}`} />
+                  <span className="text-[9px] text-muted-foreground">{d.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Explanation bullets */}
+          <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+            <div className="flex items-start gap-2">
+              <span className="text-indigo-500 font-bold flex-shrink-0">•</span>
+              <span><strong className="text-foreground">150,000,000 NOVA</strong> (15% of supply) is locked in the community airdrop pool — enough for exactly 167 participants at 900,000 each.</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-indigo-500 font-bold flex-shrink-0">•</span>
+              <span>The gas fee you pay goes to on-chain transaction processing — <strong className="text-foreground">not to the project</strong>. It covers the cost of registering your claim on BNB Chain.</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-indigo-500 font-bold flex-shrink-0">•</span>
+              <span>NOVA is already <strong className="text-foreground">live on CoinGecko</strong> and actively traded. This is an early-holder distribution to grow the community before the next exchange listing.</span>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
