@@ -1,5 +1,7 @@
 import { Router } from "express";
-import { supabase } from "../lib/supabase";
+import { db } from "@workspace/db";
+import { usersTable, claimsTable, userTasksTable } from "@workspace/db/schema";
+import { eq, and, count } from "drizzle-orm";
 import { sendMessage, answerCallbackQuery, miniAppButton, setWebhook } from "../lib/telegram";
 import { logger } from "../lib/logger";
 
@@ -23,41 +25,39 @@ async function getOrCreateUser(telegramUser: {
 }) {
   const telegramId = String(telegramUser.id);
 
-  const { data: existing } = await supabase
-    .from("users")
-    .select("*")
-    .eq("telegram_id", telegramId)
-    .single();
+  const existing = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.telegramId, telegramId))
+    .limit(1);
 
-  if (existing) return { user: existing, isNew: false };
+  if (existing.length > 0) return { user: existing[0], isNew: false };
 
   let uniqueCode = generateReferralCode();
   for (let i = 0; i < 5; i++) {
-    const { data: conflict } = await supabase
-      .from("users")
-      .select("id")
-      .eq("referral_code", uniqueCode)
-      .single();
-    if (!conflict) break;
+    const conflict = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.referralCode, uniqueCode))
+      .limit(1);
+    if (conflict.length === 0) break;
     uniqueCode = generateReferralCode();
   }
 
-  const { data: user, error } = await supabase
-    .from("users")
-    .insert({
-      telegram_id: telegramId,
+  const [user] = await db
+    .insert(usersTable)
+    .values({
+      telegramId,
       username: telegramUser.username ?? null,
-      first_name: telegramUser.first_name ?? null,
-      last_name: telegramUser.last_name ?? null,
-      referral_code: uniqueCode,
-      referred_by: telegramUser.referralCode ?? null,
-      claim_status: "pending",
-      total_rewards: "0",
+      firstName: telegramUser.first_name ?? null,
+      lastName: telegramUser.last_name ?? null,
+      referralCode: uniqueCode,
+      referredBy: telegramUser.referralCode ?? null,
+      claimStatus: "pending",
+      totalRewards: "0",
     })
-    .select()
-    .single();
+    .returning();
 
-  if (error) throw new Error(error.message);
   return { user, isNew: true };
 }
 
@@ -84,12 +84,13 @@ async function handleStart(chatId: number, tgUser: any, payload?: string) {
       { reply_markup: miniAppButton("🚀 Open NOVA Airdrop", MINI_APP_URL) }
     );
   } else {
-    const { data: claim } = await supabase
-      .from("claims")
-      .select("status")
-      .eq("telegram_id", String(tgUser.id))
-      .single();
+    const claims = await db
+      .select({ status: claimsTable.status })
+      .from(claimsTable)
+      .where(eq(claimsTable.telegramId, String(tgUser.id)))
+      .limit(1);
 
+    const claim = claims[0];
     const statusLine = claim
       ? `\n📋 Claim status: <b>${claim.status}</b>`
       : `\n📋 Claim status: <b>Pending</b>`;
@@ -99,7 +100,7 @@ async function handleStart(chatId: number, tgUser: any, payload?: string) {
       `👋 <b>Welcome back, ${firstName}!</b>\n\n` +
       `🪙 Your allocation: <b>${allocation} NOVA</b>` +
       statusLine + `\n\n` +
-      `Referral code: <code>${user.referral_code}</code>\n\n` +
+      `Referral code: <code>${user.referralCode}</code>\n\n` +
       `👇 Open the app to claim:`,
       { reply_markup: miniAppButton("🚀 Open NOVA Airdrop", MINI_APP_URL) }
     );
@@ -107,37 +108,31 @@ async function handleStart(chatId: number, tgUser: any, payload?: string) {
 }
 
 async function handleStatus(chatId: number, telegramId: number) {
-  const { data: user } = await supabase
-    .from("users")
-    .select("*")
-    .eq("telegram_id", String(telegramId))
-    .single();
+  const users = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.telegramId, String(telegramId)))
+    .limit(1);
 
-  if (!user) {
+  if (users.length === 0) {
     await sendMessage(chatId, `❌ You're not registered yet. Send /start to begin.`);
     return;
   }
 
-  const { data: claim } = await supabase
-    .from("claims")
-    .select("*")
-    .eq("telegram_id", String(telegramId))
-    .single();
+  const user = users[0];
 
-  const { data: tasks } = await supabase
-    .from("user_tasks")
-    .select("id")
-    .eq("telegram_id", String(telegramId))
-    .eq("is_completed", true);
+  const [claims, tasks, [{ total: referralCount }]] = await Promise.all([
+    db.select().from(claimsTable).where(eq(claimsTable.telegramId, String(telegramId))).limit(1),
+    db.select({ id: userTasksTable.id }).from(userTasksTable).where(
+      and(eq(userTasksTable.telegramId, String(telegramId)), eq(userTasksTable.isCompleted, true))
+    ),
+    db.select({ total: count() }).from(usersTable).where(eq(usersTable.referredBy, user.referralCode)),
+  ]);
 
-  const { count: referralCount } = await supabase
-    .from("users")
-    .select("id", { count: "exact", head: true })
-    .eq("referred_by", user.referral_code);
-
+  const claim = claims[0];
   const claimStatus = claim ? claim.status : "Not claimed";
-  const tasksDone = tasks?.length || 0;
-  const refs = referralCount || 0;
+  const tasksDone = tasks.length;
+  const refs = Number(referralCount) || 0;
   const bonusNova = refs * 500_000;
 
   await sendMessage(
@@ -148,24 +143,25 @@ async function handleStatus(chatId: number, telegramId: number) {
     `✅ Tasks Completed: <b>${tasksDone}</b>\n` +
     `👥 Referrals: <b>${refs}</b>\n` +
     `📋 Claim Status: <b>${claimStatus}</b>\n\n` +
-    `🔗 Your referral code: <code>${user.referral_code}</code>`,
+    `🔗 Your referral code: <code>${user.referralCode}</code>`,
     { reply_markup: miniAppButton("🚀 Open App", MINI_APP_URL) }
   );
 }
 
 async function handleReferral(chatId: number, telegramId: number) {
-  const { data: user } = await supabase
-    .from("users")
-    .select("referral_code")
-    .eq("telegram_id", String(telegramId))
-    .single();
+  const users = await db
+    .select({ referralCode: usersTable.referralCode })
+    .from(usersTable)
+    .where(eq(usersTable.telegramId, String(telegramId)))
+    .limit(1);
 
-  if (!user) {
+  if (users.length === 0) {
     await sendMessage(chatId, `❌ Send /start first to get your referral link.`);
     return;
   }
 
-  const link = `https://t.me/${process.env.BOT_USERNAME || "Airdropperxbot"}?start=${user.referral_code}`;
+  const { referralCode } = users[0];
+  const link = `https://t.me/${process.env.BOT_USERNAME || "Airdropperxbot"}?start=${referralCode}`;
 
   await sendMessage(
     chatId,

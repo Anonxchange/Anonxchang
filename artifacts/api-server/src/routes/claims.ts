@@ -1,5 +1,7 @@
 import { Router } from "express";
-import { supabase } from "../lib/supabase";
+import { db } from "@workspace/db";
+import { claimsTable, usersTable } from "@workspace/db/schema";
+import { eq, isNotNull } from "drizzle-orm";
 
 const router = Router();
 
@@ -11,88 +13,88 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const { data: existing } = await supabase
-    .from("claims")
-    .select("id")
-    .eq("telegram_id", String(telegramId))
-    .single();
+  const existing = await db
+    .select({ id: claimsTable.id })
+    .from(claimsTable)
+    .where(eq(claimsTable.telegramId, String(telegramId)))
+    .limit(1);
 
-  if (existing) return res.status(400).json({ error: "Already claimed" });
+  if (existing.length > 0) return res.status(400).json({ error: "Already claimed" });
 
-  const { data: claim, error } = await supabase
-    .from("claims")
-    .insert({
-      telegram_id: String(telegramId),
-      wallet_address: String(walletAddress),
-      token_amount: "900000",
-      fee_recipient: "0x2674b6DD25b98b86ba62a1d81Fa698161633B0cD",
-      fee_paid: String(feePaid),
-      tx_hash: String(txHash),
-      token_symbol: String(tokenSymbol),
-      status: "pending",
-    })
-    .select()
-    .single();
+  try {
+    const [claim] = await db
+      .insert(claimsTable)
+      .values({
+        telegramId: String(telegramId),
+        walletAddress: String(walletAddress),
+        tokenAmount: "900000",
+        feePaid: String(feePaid),
+        txHash: String(txHash),
+        tokenSymbol: String(tokenSymbol),
+        status: "pending",
+      })
+      .returning();
 
-  if (error) return res.status(500).json({ error: error.message });
+    await db
+      .update(usersTable)
+      .set({ claimStatus: "fee_paid", walletAddress: String(walletAddress) })
+      .where(eq(usersTable.telegramId, String(telegramId)));
 
-  await supabase
-    .from("users")
-    .update({ claim_status: "fee_paid", wallet_address: String(walletAddress) })
-    .eq("telegram_id", String(telegramId));
+    await creditReferrer(String(telegramId));
 
-  await creditReferrer(String(telegramId));
-
-  return res.status(201).json(formatClaim(claim));
+    return res.status(201).json(formatClaim(claim));
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 async function creditReferrer(telegramId: string) {
-  const { data: claimer } = await supabase
-    .from("users")
-    .select("referred_by")
-    .eq("telegram_id", telegramId)
-    .single();
+  const claimer = await db
+    .select({ referredBy: usersTable.referredBy })
+    .from(usersTable)
+    .where(eq(usersTable.telegramId, telegramId))
+    .limit(1);
 
-  if (!claimer?.referred_by) return;
+  if (!claimer[0]?.referredBy) return;
 
-  const { data: referrer } = await supabase
-    .from("users")
-    .select("id, total_rewards")
-    .eq("referral_code", claimer.referred_by)
-    .single();
+  const referrer = await db
+    .select({ id: usersTable.id, totalRewards: usersTable.totalRewards })
+    .from(usersTable)
+    .where(eq(usersTable.referralCode, claimer[0].referredBy))
+    .limit(1);
 
-  if (!referrer) return;
+  if (referrer.length === 0) return;
 
-  const currentRewards = parseInt(referrer.total_rewards || "0", 10);
+  const currentRewards = parseInt(referrer[0].totalRewards || "0", 10);
   const newRewards = currentRewards + REWARD_PER_REFERRAL;
 
-  await supabase
-    .from("users")
-    .update({ total_rewards: String(newRewards) })
-    .eq("id", referrer.id);
+  await db
+    .update(usersTable)
+    .set({ totalRewards: String(newRewards) })
+    .where(eq(usersTable.id, referrer[0].id));
 }
 
 router.get("/:telegramId", async (req, res) => {
-  const { data: claim } = await supabase
-    .from("claims")
-    .select("*")
-    .eq("telegram_id", req.params.telegramId)
-    .single();
+  const claims = await db
+    .select()
+    .from(claimsTable)
+    .where(eq(claimsTable.telegramId, req.params.telegramId))
+    .limit(1);
 
-  if (!claim) return res.status(404).json({ error: "No claim found" });
-  return res.json(formatClaim(claim));
+  if (claims.length === 0) return res.status(404).json({ error: "No claim found" });
+  return res.json(formatClaim(claims[0]));
 });
 
 function formatClaim(c: any) {
   return {
     id: c.id,
-    telegramId: c.telegram_id,
-    walletAddress: c.wallet_address,
-    tokenAmount: c.token_amount,
-    feePaid: c.fee_paid,
-    txHash: c.tx_hash,
+    telegramId: c.telegramId,
+    walletAddress: c.walletAddress,
+    tokenAmount: c.tokenAmount,
+    feePaid: c.feePaid,
+    txHash: c.txHash,
     status: c.status,
-    createdAt: c.created_at,
+    createdAt: c.createdAt,
   };
 }
 

@@ -1,36 +1,38 @@
 import { Router } from "express";
-import { supabase } from "../lib/supabase";
+import { db } from "@workspace/db";
+import { tasksTable, userTasksTable, usersTable } from "@workspace/db/schema";
+import { eq, and, count } from "drizzle-orm";
 import { tgCall } from "../lib/telegram";
 
 const router = Router();
 
 router.get("/", async (_req, res) => {
-  const { data: tasks } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("is_active", true);
+  const tasks = await db
+    .select()
+    .from(tasksTable)
+    .where(eq(tasksTable.isActive, true));
 
-  return res.json((tasks ?? []).map(formatTask));
+  return res.json(tasks.map(formatTask));
 });
 
 router.get("/users/:telegramId/tasks", async (req, res) => {
   const { telegramId } = req.params;
 
-  const [{ data: tasks }, { data: userTasks }] = await Promise.all([
-    supabase.from("tasks").select("*").eq("is_active", true),
-    supabase.from("user_tasks").select("*").eq("telegram_id", telegramId),
+  const [tasks, userTasks] = await Promise.all([
+    db.select().from(tasksTable).where(eq(tasksTable.isActive, true)),
+    db.select().from(userTasksTable).where(eq(userTasksTable.telegramId, telegramId)),
   ]);
 
-  const userTaskMap = new Map((userTasks ?? []).map((ut: any) => [ut.task_id, ut]));
+  const userTaskMap = new Map(userTasks.map((ut) => [ut.taskId, ut]));
 
   return res.json(
-    (tasks ?? []).map((task: any) => {
-      const ut = userTaskMap.get(task.id) as any;
+    tasks.map((task) => {
+      const ut = userTaskMap.get(task.id);
       return {
         taskId: task.id,
         telegramId,
-        isCompleted: ut?.is_completed ?? false,
-        completedAt: ut?.completed_at ?? null,
+        isCompleted: ut?.isCompleted ?? false,
+        completedAt: ut?.completedAt ?? null,
         proof: ut?.proof ?? null,
         task: formatTask(task),
       };
@@ -43,22 +45,29 @@ router.post("/users/:telegramId/tasks/:taskId/complete", async (req, res) => {
   const taskIdNum = parseInt(taskId, 10);
   const proof = req.body?.proof ?? null;
 
-  const { data: task } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("id", taskIdNum)
-    .single();
+  const tasks = await db
+    .select()
+    .from(tasksTable)
+    .where(eq(tasksTable.id, taskIdNum))
+    .limit(1);
 
-  if (!task) return res.status(404).json({ error: "Task not found" });
+  if (tasks.length === 0) return res.status(404).json({ error: "Task not found" });
+  const task = tasks[0];
 
-  const { data: existingCompletion } = await supabase
-    .from("user_tasks")
-    .select("id, is_completed")
-    .eq("telegram_id", telegramId)
-    .eq("task_id", taskIdNum)
-    .single();
+  const existingCompletions = await db
+    .select({ id: userTasksTable.id, isCompleted: userTasksTable.isCompleted })
+    .from(userTasksTable)
+    .where(
+      and(
+        eq(userTasksTable.telegramId, telegramId),
+        eq(userTasksTable.taskId, taskIdNum)
+      )
+    )
+    .limit(1);
 
-  if (existingCompletion?.is_completed) {
+  const existingCompletion = existingCompletions[0];
+
+  if (existingCompletion?.isCompleted) {
     return res.status(400).json({ error: "Task already completed" });
   }
 
@@ -69,45 +78,47 @@ router.post("/users/:telegramId/tasks/:taskId/complete", async (req, res) => {
 
   let userTask: any;
   if (existingCompletion) {
-    const { data } = await supabase
-      .from("user_tasks")
-      .update({ is_completed: true, completed_at: new Date().toISOString(), proof })
-      .eq("telegram_id", telegramId)
-      .eq("task_id", taskIdNum)
-      .select()
-      .single();
-    userTask = data;
+    const updated = await db
+      .update(userTasksTable)
+      .set({ isCompleted: true, completedAt: new Date(), proof })
+      .where(
+        and(
+          eq(userTasksTable.telegramId, telegramId),
+          eq(userTasksTable.taskId, taskIdNum)
+        )
+      )
+      .returning();
+    userTask = updated[0];
   } else {
-    const { data } = await supabase
-      .from("user_tasks")
-      .insert({ telegram_id: telegramId, task_id: taskIdNum, is_completed: true, completed_at: new Date().toISOString(), proof })
-      .select()
-      .single();
-    userTask = data;
+    const inserted = await db
+      .insert(userTasksTable)
+      .values({ telegramId, taskId: taskIdNum, isCompleted: true, completedAt: new Date(), proof })
+      .returning();
+    userTask = inserted[0];
   }
 
-  const rewardAmount = parseInt(task.reward_amount || "0", 10);
+  const rewardAmount = parseInt(task.rewardAmount || "0", 10);
   if (rewardAmount > 0) {
-    const { data: user } = await supabase
-      .from("users")
-      .select("total_rewards")
-      .eq("telegram_id", telegramId)
-      .single();
+    const users = await db
+      .select({ totalRewards: usersTable.totalRewards })
+      .from(usersTable)
+      .where(eq(usersTable.telegramId, telegramId))
+      .limit(1);
 
-    if (user) {
-      const current = parseInt(user.total_rewards || "0", 10);
-      await supabase
-        .from("users")
-        .update({ total_rewards: String(current + rewardAmount) })
-        .eq("telegram_id", telegramId);
+    if (users.length > 0) {
+      const current = parseInt(users[0].totalRewards || "0", 10);
+      await db
+        .update(usersTable)
+        .set({ totalRewards: String(current + rewardAmount) })
+        .where(eq(usersTable.telegramId, telegramId));
     }
   }
 
   return res.json({
-    taskId: userTask.task_id,
-    telegramId: userTask.telegram_id,
-    isCompleted: userTask.is_completed,
-    completedAt: userTask.completed_at ?? null,
+    taskId: userTask.taskId,
+    telegramId: userTask.telegramId,
+    isCompleted: userTask.isCompleted,
+    completedAt: userTask.completedAt ?? null,
     proof: userTask.proof ?? null,
     task: formatTask(task),
   });
@@ -116,20 +127,20 @@ router.post("/users/:telegramId/tasks/:taskId/complete", async (req, res) => {
 async function verifyTask(task: any, telegramId: string): Promise<string | null> {
   switch (task.type) {
     case "wallet_connect": {
-      const { data: user } = await supabase
-        .from("users")
-        .select("wallet_address")
-        .eq("telegram_id", telegramId)
-        .single();
-      if (!user?.wallet_address) {
+      const users = await db
+        .select({ walletAddress: usersTable.walletAddress })
+        .from(usersTable)
+        .where(eq(usersTable.telegramId, telegramId))
+        .limit(1);
+      if (!users[0]?.walletAddress) {
         return "Connect your wallet in the home screen first, then try again.";
       }
       return null;
     }
 
     case "telegram_join": {
-      if (!task.action_url) return null;
-      const channelUsername = task.action_url.replace("https://t.me/", "").replace(/\/$/, "");
+      if (!task.actionUrl) return null;
+      const channelUsername = task.actionUrl.replace("https://t.me/", "").replace(/\/$/, "");
       try {
         const result = await tgCall("getChatMember", {
           chat_id: `@${channelUsername}`,
@@ -146,18 +157,18 @@ async function verifyTask(task: any, telegramId: string): Promise<string | null>
     }
 
     case "referral": {
-      const requiredCount = task.required_count ?? 1;
-      const { data: user } = await supabase
-        .from("users")
-        .select("referral_code")
-        .eq("telegram_id", telegramId)
-        .single();
-      if (!user?.referral_code) return "User not found.";
-      const { count } = await supabase
-        .from("users")
-        .select("id", { count: "exact", head: true })
-        .eq("referred_by", user.referral_code);
-      const actual = count ?? 0;
+      const requiredCount = task.requiredCount ?? 1;
+      const users = await db
+        .select({ referralCode: usersTable.referralCode })
+        .from(usersTable)
+        .where(eq(usersTable.telegramId, telegramId))
+        .limit(1);
+      if (!users[0]?.referralCode) return "User not found.";
+      const [{ total }] = await db
+        .select({ total: count() })
+        .from(usersTable)
+        .where(eq(usersTable.referredBy, users[0].referralCode));
+      const actual = total ?? 0;
       if (actual < requiredCount) {
         return `You need ${requiredCount} referrals to complete this task. You currently have ${actual}.`;
       }
@@ -179,11 +190,11 @@ function formatTask(t: any) {
     type: t.type,
     title: t.title,
     description: t.description,
-    rewardAmount: t.reward_amount,
-    rewardToken: t.reward_token,
-    requiredCount: t.required_count ?? null,
-    actionUrl: t.action_url ?? null,
-    isActive: t.is_active,
+    rewardAmount: t.rewardAmount,
+    rewardToken: t.rewardToken,
+    requiredCount: t.requiredCount ?? null,
+    actionUrl: t.actionUrl ?? null,
+    isActive: t.isActive,
   };
 }
 

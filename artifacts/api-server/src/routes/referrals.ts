@@ -1,43 +1,46 @@
 import { Router } from "express";
-import { supabase } from "../lib/supabase";
+import { db } from "@workspace/db";
+import { usersTable } from "@workspace/db/schema";
+import { eq } from "drizzle-orm";
 
 const router = Router();
 
 router.get("/:telegramId", async (req, res) => {
   const { telegramId } = req.params;
 
-  const { data: user } = await supabase
-    .from("users")
-    .select("*")
-    .eq("telegram_id", telegramId)
-    .single();
+  const users = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.telegramId, telegramId))
+    .limit(1);
 
-  if (!user) return res.status(404).json({ error: "User not found" });
+  if (users.length === 0) return res.status(404).json({ error: "User not found" });
+  const user = users[0];
 
-  const { data: referrals } = await supabase
-    .from("users")
-    .select("*")
-    .eq("referred_by", user.referral_code);
+  const referrals = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.referredBy, user.referralCode));
 
-  const qualified = (referrals ?? []).filter(
-    (r: any) => r.claim_status === "fee_paid" || r.claim_status === "claimed"
+  const qualified = referrals.filter(
+    (r) => r.claimStatus === "fee_paid" || r.claimStatus === "claimed"
   );
 
   const botUsername = process.env.BOT_USERNAME || "Airdropperxbot";
 
   return res.json({
     telegramId,
-    referralCode: user.referral_code,
-    referralLink: `https://t.me/${botUsername}?start=${user.referral_code}`,
-    totalReferrals: (referrals ?? []).length,
+    referralCode: user.referralCode,
+    referralLink: `https://t.me/${botUsername}?start=${user.referralCode}`,
+    totalReferrals: referrals.length,
     qualifiedReferrals: qualified.length,
     pendingReward: String(qualified.length * 500_000),
     claimedReward: "0",
-    referrals: (referrals ?? []).map((r: any) => ({
+    referrals: referrals.map((r) => ({
       username: r.username ?? null,
-      firstName: r.first_name ?? null,
-      joinedAt: r.created_at,
-      hasClaimed: r.claim_status === "fee_paid" || r.claim_status === "claimed",
+      firstName: r.firstName ?? null,
+      joinedAt: r.createdAt,
+      hasClaimed: r.claimStatus === "fee_paid" || r.claimStatus === "claimed",
     })),
   });
 });

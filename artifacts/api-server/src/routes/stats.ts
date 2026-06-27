@@ -1,27 +1,29 @@
 import { Router } from "express";
-import { supabase } from "../lib/supabase";
+import { db } from "@workspace/db";
+import { usersTable, claimsTable, airdropTokensTable } from "@workspace/db/schema";
+import { eq, isNotNull, sql, count } from "drizzle-orm";
 
 const router = Router();
 
 router.get("/", async (_req, res) => {
   const [
-    { count: totalParticipants },
-    { data: claims },
-    { count: activeAirdrops },
-    { count: totalReferrals },
+    [{ total: totalParticipants }],
+    claims,
+    [{ total: activeAirdrops }],
+    [{ total: totalReferrals }],
   ] = await Promise.all([
-    supabase.from("users").select("*", { count: "exact", head: true }),
-    supabase.from("claims").select("token_amount, fee_paid"),
-    supabase.from("airdrop_tokens").select("*", { count: "exact", head: true }).eq("is_featured", true),
-    supabase.from("users").select("*", { count: "exact", head: true }).not("referred_by", "is", null),
+    db.select({ total: count() }).from(usersTable),
+    db.select({ tokenAmount: claimsTable.tokenAmount, feePaid: claimsTable.feePaid }).from(claimsTable),
+    db.select({ total: count() }).from(airdropTokensTable).where(eq(airdropTokensTable.isFeatured, true)),
+    db.select({ total: count() }).from(usersTable).where(isNotNull(usersTable.referredBy)),
   ]);
 
-  const totalClaimed = (claims ?? []).reduce(
-    (sum: number, c: any) => sum + parseFloat(c.token_amount || "0"),
+  const totalClaimed = claims.reduce(
+    (sum, c) => sum + parseFloat(c.tokenAmount || "0"),
     0
   );
-  const totalFees = (claims ?? []).reduce(
-    (sum: number, c: any) => sum + parseFloat(c.fee_paid || "0"),
+  const totalFees = claims.reduce(
+    (sum, c) => sum + parseFloat(c.feePaid || "0"),
     0
   );
 
