@@ -406,64 +406,6 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {/* ── NOVA on BNB Smart Chain ─────────────────────── */}
-      <Card className="glass-card border border-indigo-100 overflow-hidden">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-1.5">
-              <Shield className="w-4 h-4 text-indigo-600" />
-              <span className="text-sm font-bold text-foreground">NOVA on BNB Smart Chain</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200">BSC</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">BEP-20</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col divide-y divide-border rounded-xl border border-border overflow-hidden">
-            {/* BscScan */}
-            <a
-              href="https://bscscan.com/token/0x17a858dab470f6f884e0a77e2f25e8a5dc34f98f"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-3 bg-white hover:bg-indigo-50/50 transition-colors"
-            >
-              <div className="flex items-center gap-2.5">
-                <img src="https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png" className="w-7 h-7 rounded-full" alt="NOVA" />
-                <div>
-                  <div className="text-sm font-semibold text-foreground">NOVA Token · BscScan</div>
-                  <div className="text-[11px] text-muted-foreground">BEP-20 · BNB Chain</div>
-                </div>
-              </div>
-              <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            </a>
-
-            {/* CoinGecko */}
-            <a
-              href="https://www.coingecko.com/en/coins/nova-on-bnb"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-3 bg-white hover:bg-indigo-50/50 transition-colors"
-            >
-              <div>
-                <div className="text-sm font-semibold text-foreground">NOVA · CoinGecko Listed</div>
-                <div className="text-[11px] text-muted-foreground">Live price · check current rate</div>
-              </div>
-              <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            </a>
-
-            {/* Network info */}
-            <div className="flex items-center justify-between p-3 bg-white">
-              <div>
-                <div className="text-sm font-semibold text-foreground">Network</div>
-                <div className="text-[11px] text-muted-foreground">BNB Smart Chain · Gas paid in BNB</div>
-              </div>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">BEP-20</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* ── Claim Card ──────────────────────────────────── */}
       <Card className="glass-card overflow-hidden border border-border">
         <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400" />
@@ -591,29 +533,60 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {/* ── Trust indicators ─────────────────────────────── */}
-      <div className="flex flex-col gap-2 pb-4">
-        <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-          <ShieldCheck className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
-          Nova AI smart contract secured — funds go directly to BNB Chain
-        </div>
-        <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-          <Zap className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
-          Instant allocation lock — confirmed within seconds &nbsp;·&nbsp;
-          <a
-            href="https://www.coingecko.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-indigo-400 underline underline-offset-2 hover:text-indigo-300"
-          >
-            CoinGecko
-          </a>
-        </div>
-        <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-          <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
-          200 maximum participants — first-come, first-served
-        </div>
-      </div>
+      {/* ── NOVA on BNB Smart Chain ─────────────────────── */}
+      <Card className="glass-card border border-indigo-100 overflow-hidden pb-4">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-indigo-600" />
+              <span className="text-sm font-bold text-foreground">NOVA on BNB Smart Chain</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200">BSC</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">BEP-20</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col divide-y divide-border rounded-xl border border-border overflow-hidden">
+            <a
+              href="https://bscscan.com/token/0x17a858dab470f6f884e0a77e2f25e8a5dc34f98f"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-3 bg-white hover:bg-indigo-50/50 transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <img src="https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png" className="w-7 h-7 rounded-full" alt="NOVA" />
+                <div>
+                  <div className="text-sm font-semibold text-foreground">NOVA Token · BscScan</div>
+                  <div className="text-[11px] text-muted-foreground">BEP-20 · BNB Chain</div>
+                </div>
+              </div>
+              <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </a>
+
+            <a
+              href="https://www.coingecko.com/en/coins/nova-on-bnb"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-3 bg-white hover:bg-indigo-50/50 transition-colors"
+            >
+              <div>
+                <div className="text-sm font-semibold text-foreground">NOVA · CoinGecko Listed</div>
+                <div className="text-[11px] text-muted-foreground">Live price · check current rate</div>
+              </div>
+              <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </a>
+
+            <div className="flex items-center justify-between p-3 bg-white">
+              <div>
+                <div className="text-sm font-semibold text-foreground">Network</div>
+                <div className="text-[11px] text-muted-foreground">BNB Smart Chain · Gas paid in BNB</div>
+              </div>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">BEP-20</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
