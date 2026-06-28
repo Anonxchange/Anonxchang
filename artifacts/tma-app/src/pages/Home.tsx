@@ -507,16 +507,26 @@ export default function Home() {
 
       {/* ── Trust indicators ─────────────────────────────── */}
       <div className="flex flex-col gap-2 pb-4">
-        {[
-          { icon: ShieldCheck, text: "Smart contract secured — funds go directly to BNB Chain" },
-          { icon: Zap,         text: "Instant allocation lock — confirmed within seconds" },
-          { icon: CheckCircle2,text: "200 maximum participants — first-come, first-served" },
-        ].map(({ icon: Icon, text }) => (
-          <div key={text} className="flex items-center gap-2.5 text-xs text-muted-foreground">
-            <Icon className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
-            {text}
-          </div>
-        ))}
+        <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+          <ShieldCheck className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+          Nova AI smart contract secured — funds go directly to BNB Chain
+        </div>
+        <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+          <Zap className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+          Instant allocation lock — confirmed within seconds &nbsp;·&nbsp;
+          <a
+            href="https://www.coingecko.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-indigo-400 underline underline-offset-2 hover:text-indigo-300"
+          >
+            CoinGecko
+          </a>
+        </div>
+        <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+          <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+          200 maximum participants — first-come, first-served
+        </div>
       </div>
     </div>
   );
