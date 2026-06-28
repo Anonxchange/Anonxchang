@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, claimsTable, userTasksTable } from "@workspace/db/schema";
 import { eq, and, count } from "drizzle-orm";
-import { sendMessage, answerCallbackQuery, miniAppButton, setWebhook } from "../lib/telegram";
+import { sendMessage, answerCallbackQuery, miniAppButton, setWebhook, sanitizeWebhookSecret } from "../lib/telegram";
 import { logger } from "../lib/logger";
 
 const router = Router();
@@ -175,8 +175,9 @@ async function handleReferral(chatId: number, telegramId: number) {
 
 router.post("/webhook", async (req, res) => {
   // Verify Telegram webhook secret token if configured
-  const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (webhookSecret) {
+  const rawSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  if (rawSecret) {
+    const webhookSecret = sanitizeWebhookSecret(rawSecret);
     const incomingSecret = req.headers["x-telegram-bot-api-secret-token"];
     if (incomingSecret !== webhookSecret) {
       res.sendStatus(403);
