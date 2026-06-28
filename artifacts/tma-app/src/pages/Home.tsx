@@ -7,7 +7,8 @@ import { parseEther } from "viem";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Wallet, RefreshCcw, CheckCircle2, Zap, Clock, ShieldCheck, ExternalLink, Shield } from "lucide-react";
+import { Copy, Wallet, RefreshCcw, CheckCircle2, Zap, Clock, ShieldCheck, ExternalLink, Shield, Activity } from "lucide-react";
+import { FaTelegram } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -533,6 +534,30 @@ export default function Home() {
         </CardContent>
       </Card>
 
+      {/* ── Network Activity ────────────────────────────── */}
+      <Card className="glass-card border border-border">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Activity className="w-4 h-4 text-indigo-500" />
+            <span className="text-sm font-semibold text-foreground">Network Activity</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3">
+              <div className="text-2xl font-black text-indigo-600 tabular-nums">
+                {statsLoading ? "..." : (stats?.totalParticipants ?? 0).toLocaleString()}
+              </div>
+              <div className="text-[11px] text-muted-foreground uppercase tracking-wider mt-0.5">Participants</div>
+            </div>
+            <div className="rounded-xl bg-violet-50 border border-violet-100 p-3">
+              <div className="text-2xl font-black text-violet-600 tabular-nums">
+                {statsLoading ? "..." : parseInt(stats?.totalClaimed ?? "0", 10).toLocaleString()}
+              </div>
+              <div className="text-[11px] text-muted-foreground uppercase tracking-wider mt-0.5">Tokens Claimed</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* ── NOVA on BNB Smart Chain ─────────────────────── */}
       <Card className="glass-card border border-indigo-100 overflow-hidden pb-4">
         <CardContent className="p-4">
@@ -587,6 +612,25 @@ export default function Home() {
           </div>
         </CardContent>
       </Card>
+
+      {/* ── Telegram CTA ────────────────────────────────── */}
+      <a
+        href="https://t.me/Airdropperxbot"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-between p-4 rounded-2xl bg-[#229ED9]/10 border border-[#229ED9]/30 hover:bg-[#229ED9]/15 transition-colors mb-2"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#229ED9] flex items-center justify-center flex-shrink-0">
+            <FaTelegram className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <div className="font-bold text-sm text-foreground">@Airdropperxbot</div>
+            <div className="text-xs text-[#229ED9]">Open in Telegram to claim</div>
+          </div>
+        </div>
+        <ExternalLink className="w-4 h-4 text-[#229ED9]" />
+      </a>
     </div>
   );
 }
