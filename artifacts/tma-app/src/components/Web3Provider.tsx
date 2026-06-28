@@ -1,7 +1,7 @@
 import { createAppKit } from '@reown/appkit/react'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import { bsc } from '@reown/appkit/networks'
-import { WagmiProvider, useReconnect } from 'wagmi'
+import { WagmiProvider, useReconnect, cookieStorage, createStorage } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React, { useEffect } from 'react'
 
@@ -22,6 +22,7 @@ const wagmiAdapter = new WagmiAdapter({
   networks,
   projectId,
   ssr: false,
+  storage: createStorage({ storage: cookieStorage }),
 })
 
 createAppKit({
