@@ -322,7 +322,7 @@ export default function Tokens() {
     feeRequired: "0.005",
     feeToken: "BNB",
     claimDeadline: "2026-07-25T23:59:59Z",
-    totalParticipants: 167,
+    totalParticipants: 200,
     description: "NOVA is the next-gen DeFi terminal token. This exclusive airdrop distributes 900,000 NOVA to eligible participants who complete tasks and pay a small gas fee. NOVA is live on CoinGecko and actively traded.",
     website: "https://t.me/Airdropperxbot",
     isFeatured: true,

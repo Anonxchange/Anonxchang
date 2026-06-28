@@ -145,7 +145,7 @@ export default function Home() {
     style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0,
   });
 
-  const TOTAL_SLOTS = 167;
+  const TOTAL_SLOTS = 200;
   const BASE_PARTICIPANTS = 34000;
   const actualDbUsers = Math.max(0, (stats?.totalParticipants ?? BASE_PARTICIPANTS) - BASE_PARTICIPANTS);
   const slotsLeft = Math.max(0, TOTAL_SLOTS - actualDbUsers);
@@ -373,7 +373,7 @@ export default function Home() {
           <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
             <div className="flex items-start gap-2">
               <span className="text-indigo-500 font-bold flex-shrink-0">•</span>
-              <span><strong className="text-foreground">150,000,000 NOVA</strong> (15% of supply) is locked in the community airdrop pool — enough for exactly 167 participants at 900,000 each.</span>
+              <span><strong className="text-foreground">150,000,000 NOVA</strong> (15% of supply) is locked in the community airdrop pool — enough for exactly 200 participants at 900,000 each.</span>
             </div>
             <div className="flex items-start gap-2">
               <span className="text-indigo-500 font-bold flex-shrink-0">•</span>
@@ -511,7 +511,7 @@ export default function Home() {
         {[
           { icon: ShieldCheck, text: "Smart contract secured — funds go directly to BNB Chain" },
           { icon: Zap,         text: "Instant allocation lock — confirmed within seconds" },
-          { icon: CheckCircle2,text: "167 maximum participants — first-come, first-served" },
+          { icon: CheckCircle2,text: "200 maximum participants — first-come, first-served" },
         ].map(({ icon: Icon, text }) => (
           <div key={text} className="flex items-center gap-2.5 text-xs text-muted-foreground">
             <Icon className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
