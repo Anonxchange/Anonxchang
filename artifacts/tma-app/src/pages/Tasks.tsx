@@ -5,7 +5,7 @@ import { useAccount } from "wagmi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, Users, Wallet, Share2, Lock } from "lucide-react";
+import { CheckCircle2, Users, Wallet, Share2 } from "lucide-react";
 import { FaTelegram, FaTwitter } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -64,37 +64,53 @@ export default function Tasks() {
   }, [isConnected, address, telegramId]);
 
   const handleCompleteTask = (taskId: number, taskType: string, actionUrl?: string | null) => {
-    // Wallet connect task — open modal instead of calling API
+    // Wallet connect task — open the wallet modal
     if (taskType === "wallet_connect") {
       open();
       return;
     }
 
-    // All other tasks require wallet to be connected first
-    if (!isConnected) {
-      toast.info("Connect your wallet first to complete tasks.");
-      open();
+    // If task has an action URL, open it and prompt user to complete it
+    if (actionUrl) {
+      window.open(actionUrl, "_blank");
+      toast.info("Please complete the task, then return here to verify your reward.", {
+        duration: 4000,
+      });
+      setCompletingTaskId(taskId);
+      // Give user 2 seconds after opening the link before verifying
+      setTimeout(() => {
+        completeTask.mutate({ telegramId, taskId, data: {} }, {
+          onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
+            queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
+            toast.success("✅ Task verified! Reward added to your balance.");
+            setCompletingTaskId(null);
+          },
+          onError: (err: any) => {
+            const msg = err?.response?.data?.error || "Could not verify task. Make sure you completed it.";
+            toast.error(msg);
+            setCompletingTaskId(null);
+          }
+        });
+      }, 2000);
       return;
     }
 
-    if (actionUrl) window.open(actionUrl, "_blank");
+    // No action URL — complete directly
     setCompletingTaskId(taskId);
-    const delay = actionUrl ? 1500 : 0;
-    setTimeout(() => {
-      completeTask.mutate({ telegramId, taskId, data: {} }, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
-          queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
-          toast.success("Task verified! Reward added to your balance.");
-          setCompletingTaskId(null);
-        },
-        onError: (err: any) => {
-          const msg = err?.response?.data?.error || err?.message || "Could not verify task.";
-          toast.error(msg);
-          setCompletingTaskId(null);
-        }
-      });
-    }, delay);
+    completeTask.mutate({ telegramId, taskId, data: {} }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
+        queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
+        toast.success("✅ Task verified! Reward added to your balance.");
+        setCompletingTaskId(null);
+      },
+      onError: (err: any) => {
+        const msg = err?.response?.data?.error || "Could not verify task.";
+        toast.error(msg);
+        setCompletingTaskId(null);
+      }
+    });
   };
 
   const isCompleted = (taskId: number) =>
@@ -108,11 +124,6 @@ export default function Tasks() {
     `https://t.me/Airdropperxbot?start=${user?.referralCode || ""}`;
 
   const handleShareReferral = () => {
-    if (!isConnected) {
-      toast.info("Connect your wallet first.");
-      open();
-      return;
-    }
     const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent("🚀 Join NOVA Airdrop and claim 900,000 NOVA tokens for free!")}`;
     window.open(shareUrl, "_blank");
   };
@@ -136,22 +147,6 @@ export default function Tasks() {
         <h1 className="text-2xl font-black tracking-tight mb-1 neon-text">Airdrop Tasks</h1>
         <p className="text-muted-foreground text-sm">Complete tasks to boost your 900,000 NOVA allocation.</p>
       </div>
-
-      {/* Wallet not connected banner */}
-      {!isConnected && (
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200">
-          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 flex-shrink-0">
-            <Lock className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="font-semibold text-sm text-amber-800">Connect wallet to earn rewards</div>
-            <div className="text-xs text-amber-600">Tasks are locked until your wallet is connected</div>
-          </div>
-          <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white border-0 flex-shrink-0" onClick={() => open()}>
-            Connect
-          </Button>
-        </div>
-      )}
 
       {/* NOVA Earnings Balance */}
       <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 p-4 text-white shadow-md">
@@ -224,15 +219,13 @@ export default function Tasks() {
           const isCompleting = completingTaskId === task.id;
           const colorClass = colorMap[task.type] || "bg-indigo-50 text-indigo-600 border-indigo-100";
           const isWalletTask = task.type === "wallet_connect";
-          const isLocked = !isConnected && !isWalletTask;
 
-          // wallet_connect task: show as completed if wallet is connected
+          // wallet_connect task is effectively done when wallet is connected
           const effectivelyCompleted = completed || (isWalletTask && isConnected);
 
           let buttonLabel = "Go";
           if (isCompleting) buttonLabel = "Checking...";
           else if (isWalletTask && !isConnected) buttonLabel = "Connect";
-          else if (isLocked) buttonLabel = "Connect First";
 
           return (
             <Card
@@ -240,8 +233,6 @@ export default function Tasks() {
               className={`glass-card transition-all border ${
                 effectivelyCompleted
                   ? "opacity-60"
-                  : isLocked
-                  ? "opacity-70"
                   : "hover:shadow-md hover:border-indigo-200"
               }`}
             >
@@ -250,11 +241,9 @@ export default function Tasks() {
                   <div className={`w-11 h-11 rounded-xl flex items-center justify-center border flex-shrink-0 ${
                     effectivelyCompleted
                       ? "bg-green-100 text-green-600 border-green-200"
-                      : isLocked
-                      ? "bg-slate-100 text-slate-400 border-slate-200"
                       : colorClass
                   }`}>
-                    {effectivelyCompleted ? <CheckCircle2 className="w-5 h-5" /> : isLocked ? <Lock className="w-4 h-4" /> : <Icon className="w-5 h-5" />}
+                    {effectivelyCompleted ? <CheckCircle2 className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                   </div>
                   <div>
                     <div className="font-semibold text-sm">{task.title}</div>
@@ -273,7 +262,7 @@ export default function Tasks() {
                     onClick={() => handleCompleteTask(task.id, task.type, task.actionUrl)}
                     disabled={isCompleting}
                     className={`flex-shrink-0 text-white border-0 text-xs ${
-                      isLocked || isWalletTask
+                      isWalletTask
                         ? "bg-amber-500 hover:bg-amber-600"
                         : "bg-indigo-600 hover:bg-indigo-700"
                     }`}

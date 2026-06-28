@@ -390,6 +390,13 @@ export default function Home() {
             >
               Connect Wallet to Claim
             </Button>
+          ) : totalAllocation < 900_000 ? (
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-center">
+              <div className="text-sm font-bold text-red-600 mb-1">Insufficient Balance</div>
+              <div className="text-xs text-red-500">
+                You need at least 900,000 NOVA to claim. Your current balance: {totalAllocation.toLocaleString()} NOVA.
+              </div>
+            </div>
           ) : countdown.expired ? (
             <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-center text-sm text-red-600 font-semibold">
               ⏰ The claim period ended on July 25, 2026.
