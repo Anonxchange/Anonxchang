@@ -1,13 +1,17 @@
 import { useTelegram } from "@/components/TelegramProvider";
 import { useListTasks, useGetUserTasks, useCompleteTask, useGetReferralStats, getGetUserTasksQueryKey, getGetUserQueryKey } from "@workspace/api-client-react";
+import { useAppKit } from "@reown/appkit/react";
+import { useAccount } from "wagmi";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, Users, Wallet, Share2 } from "lucide-react";
+import { CheckCircle2, Users, Wallet, Share2, Lock } from "lucide-react";
 import { FaTelegram, FaTwitter } from "react-icons/fa";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+
+const ESTIMATED_VALUE_PER_TOKEN = 0.003316;
 
 const iconMap: Record<string, React.ElementType> = {
   telegram_join: FaTelegram,
@@ -27,6 +31,8 @@ const colorMap: Record<string, string> = {
 
 export default function Tasks() {
   const { telegramId, user } = useTelegram();
+  const { open } = useAppKit();
+  const { address, isConnected } = useAccount();
   const queryClient = useQueryClient();
   const [completingTaskId, setCompletingTaskId] = useState<number | null>(null);
 
@@ -44,8 +50,34 @@ export default function Tasks() {
   const qualifiedReferrals = referralStats?.qualifiedReferrals ?? 0;
   const taskEarnings = parseInt(user?.totalRewards || "0", 10);
 
-  const handleCompleteTask = (taskId: number, actionUrl?: string | null) => {
-    if (actionUrl) window.open(actionUrl, '_blank');
+  // Auto-complete wallet_connect task when wallet connects on this page
+  useEffect(() => {
+    if (!isConnected || !address || !telegramId) return;
+    completeTask.mutate({ telegramId, taskId: 1, data: {} }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
+        queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
+        toast.success("✅ Wallet connected — task reward added!");
+      },
+      onError: () => { /* already completed, silently ignore */ },
+    });
+  }, [isConnected, address, telegramId]);
+
+  const handleCompleteTask = (taskId: number, taskType: string, actionUrl?: string | null) => {
+    // Wallet connect task — open modal instead of calling API
+    if (taskType === "wallet_connect") {
+      open();
+      return;
+    }
+
+    // All other tasks require wallet to be connected first
+    if (!isConnected) {
+      toast.info("Connect your wallet first to complete tasks.");
+      open();
+      return;
+    }
+
+    if (actionUrl) window.open(actionUrl, "_blank");
     setCompletingTaskId(taskId);
     const delay = actionUrl ? 1500 : 0;
     setTimeout(() => {
@@ -57,7 +89,7 @@ export default function Tasks() {
           setCompletingTaskId(null);
         },
         onError: (err: any) => {
-          const msg = err?.response?.data?.error || err?.message || "Could not verify task completion.";
+          const msg = err?.response?.data?.error || err?.message || "Could not verify task.";
           toast.error(msg);
           setCompletingTaskId(null);
         }
@@ -65,12 +97,25 @@ export default function Tasks() {
     }, delay);
   };
 
-  const isCompleted = (taskId: number) => {
-    return userTasks?.some(ut => ut.taskId === taskId && ut.isCompleted);
-  };
+  const isCompleted = (taskId: number) =>
+    userTasks?.some(ut => ut.taskId === taskId && ut.isCompleted);
 
   const completedCount = tasks?.filter(t => isCompleted(t.id)).length || 0;
   const totalCount = tasks?.length || 0;
+
+  const referralLink =
+    referralStats?.referralLink ||
+    `https://t.me/Airdropperxbot?start=${user?.referralCode || ""}`;
+
+  const handleShareReferral = () => {
+    if (!isConnected) {
+      toast.info("Connect your wallet first.");
+      open();
+      return;
+    }
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent("🚀 Join NOVA Airdrop and claim 900,000 NOVA tokens for free!")}`;
+    window.open(shareUrl, "_blank");
+  };
 
   if (tasksLoading || userTasksLoading) {
     return (
@@ -92,6 +137,22 @@ export default function Tasks() {
         <p className="text-muted-foreground text-sm">Complete tasks to boost your 900,000 NOVA allocation.</p>
       </div>
 
+      {/* Wallet not connected banner */}
+      {!isConnected && (
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200">
+          <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 flex-shrink-0">
+            <Lock className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-sm text-amber-800">Connect wallet to earn rewards</div>
+            <div className="text-xs text-amber-600">Tasks are locked until your wallet is connected</div>
+          </div>
+          <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white border-0 flex-shrink-0" onClick={() => open()}>
+            Connect
+          </Button>
+        </div>
+      )}
+
       {/* NOVA Earnings Balance */}
       <div className="rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 p-4 text-white shadow-md">
         <div className="flex items-center gap-2 mb-2">
@@ -101,6 +162,9 @@ export default function Tasks() {
         <div className="text-3xl font-black tabular-nums">
           {taskEarnings.toLocaleString()}
           <span className="text-base font-semibold text-white/60 ml-1.5">NOVA</span>
+        </div>
+        <div className="text-white/50 text-[10px] mt-0.5">
+          ≈ {(taskEarnings * ESTIMATED_VALUE_PER_TOKEN).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })} at current price
         </div>
         <div className="flex gap-3 mt-3 pt-3 border-t border-white/20 text-xs">
           <div className="flex-1">
@@ -132,7 +196,7 @@ export default function Tasks() {
               </div>
               <div>
                 <div className="font-bold text-base">Invite Friends</div>
-                <div className="text-xs text-violet-600 font-semibold">+500,000 NOVA per friend</div>
+                <div className="text-xs text-violet-600 font-semibold">+90,000 NOVA per friend</div>
               </div>
             </div>
             <div className="px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-bold border border-violet-200">
@@ -140,10 +204,14 @@ export default function Tasks() {
             </div>
           </div>
           <p className="text-xs text-muted-foreground mb-4">
-            Refer 10 qualified friends to unlock the MAX tier bonus of 5,000,000 NOVA.
+            Refer 10 qualified friends to unlock the MAX tier bonus of 900,000 NOVA.
           </p>
-          <Button className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-0 hover:from-indigo-700 hover:to-violet-700">
-            Share Your Link
+          <Button
+            className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-0 hover:from-indigo-700 hover:to-violet-700"
+            onClick={handleShareReferral}
+          >
+            <FaTelegram className="w-4 h-4 mr-2 flex-shrink-0" />
+            Share Your Referral Link
           </Button>
         </CardContent>
       </Card>
@@ -155,13 +223,38 @@ export default function Tasks() {
           const completed = isCompleted(task.id);
           const isCompleting = completingTaskId === task.id;
           const colorClass = colorMap[task.type] || "bg-indigo-50 text-indigo-600 border-indigo-100";
+          const isWalletTask = task.type === "wallet_connect";
+          const isLocked = !isConnected && !isWalletTask;
+
+          // wallet_connect task: show as completed if wallet is connected
+          const effectivelyCompleted = completed || (isWalletTask && isConnected);
+
+          let buttonLabel = "Go";
+          if (isCompleting) buttonLabel = "Checking...";
+          else if (isWalletTask && !isConnected) buttonLabel = "Connect";
+          else if (isLocked) buttonLabel = "Connect First";
 
           return (
-            <Card key={task.id} className={`glass-card transition-all border ${completed ? 'opacity-60' : 'hover:shadow-md hover:border-indigo-200'}`}>
+            <Card
+              key={task.id}
+              className={`glass-card transition-all border ${
+                effectivelyCompleted
+                  ? "opacity-60"
+                  : isLocked
+                  ? "opacity-70"
+                  : "hover:shadow-md hover:border-indigo-200"
+              }`}
+            >
               <CardContent className="p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center border flex-shrink-0 ${completed ? 'bg-green-100 text-green-600 border-green-200' : colorClass}`}>
-                    {completed ? <CheckCircle2 className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center border flex-shrink-0 ${
+                    effectivelyCompleted
+                      ? "bg-green-100 text-green-600 border-green-200"
+                      : isLocked
+                      ? "bg-slate-100 text-slate-400 border-slate-200"
+                      : colorClass
+                  }`}>
+                    {effectivelyCompleted ? <CheckCircle2 className="w-5 h-5" /> : isLocked ? <Lock className="w-4 h-4" /> : <Icon className="w-5 h-5" />}
                   </div>
                   <div>
                     <div className="font-semibold text-sm">{task.title}</div>
@@ -172,16 +265,20 @@ export default function Tasks() {
                   </div>
                 </div>
 
-                {completed ? (
+                {effectivelyCompleted ? (
                   <span className="text-xs px-3 py-1 rounded-full bg-green-100 text-green-700 font-semibold border border-green-200 flex-shrink-0">Done</span>
                 ) : (
                   <Button
                     size="sm"
-                    onClick={() => handleCompleteTask(task.id, task.actionUrl)}
+                    onClick={() => handleCompleteTask(task.id, task.type, task.actionUrl)}
                     disabled={isCompleting}
-                    className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white border-0 text-xs"
+                    className={`flex-shrink-0 text-white border-0 text-xs ${
+                      isLocked || isWalletTask
+                        ? "bg-amber-500 hover:bg-amber-600"
+                        : "bg-indigo-600 hover:bg-indigo-700"
+                    }`}
                   >
-                    {isCompleting ? "Checking..." : "Go"}
+                    {buttonLabel}
                   </Button>
                 )}
               </CardContent>

