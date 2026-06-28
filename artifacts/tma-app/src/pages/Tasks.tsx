@@ -276,7 +276,7 @@ export default function Tasks() {
                   </div>
                   <div>
                     <div className="font-semibold text-sm">{task.title}</div>
-                    <div className="text-xs text-muted-foreground">{task.description}</div>
+                    {task.description && <div className="text-xs text-muted-foreground">{task.description}</div>}
                     <div className="text-xs font-bold text-indigo-600 mt-0.5">
                       +{Number(task.rewardAmount).toLocaleString()} {task.rewardToken}
                     </div>
