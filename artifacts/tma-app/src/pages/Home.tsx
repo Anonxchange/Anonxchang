@@ -146,9 +146,7 @@ export default function Home() {
   });
 
   const TOTAL_SLOTS = 200;
-  const BASE_PARTICIPANTS = 34000;
-  const actualDbUsers = Math.max(0, (stats?.totalParticipants ?? BASE_PARTICIPANTS) - BASE_PARTICIPANTS);
-  const slotsLeft = Math.max(0, TOTAL_SLOTS - actualDbUsers);
+  const slotsLeft = Math.max(0, TOTAL_SLOTS - (stats?.totalParticipants ?? 0));
 
   const isClaimed = claimSubmitted || claimStatus?.status === "confirmed";
   const isBusy = isSending || isConfirming;
