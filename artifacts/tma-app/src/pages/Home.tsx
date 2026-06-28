@@ -346,27 +346,7 @@ export default function Home() {
       <Card className="glass-card border border-indigo-100 bg-indigo-50/30">
         <CardContent className="p-4">
           <div className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5" /> How to earn 900,000 NOVA
-          </div>
-
-          {/* Task breakdown */}
-          <div className="flex flex-col gap-1.5 mb-3">
-            {[
-              { label: "Join Telegram Channel", reward: "50,000" },
-              { label: "Connect Your Wallet", reward: "100,000" },
-              { label: "Share on Social Media", reward: "50,000" },
-              { label: "Refer 10 People", reward: "300,000" },
-              { label: "Refer 50 People", reward: "400,000" },
-            ].map(({ label, reward }) => (
-              <div key={label} className="flex justify-between items-center text-[11px]">
-                <span className="text-muted-foreground">{label}</span>
-                <span className="font-bold text-indigo-600">+{reward} NOVA</span>
-              </div>
-            ))}
-            <div className="mt-1 pt-1 border-t border-indigo-200 flex justify-between items-center text-xs">
-              <span className="font-bold text-foreground">Total (all tasks)</span>
-              <span className="font-black text-indigo-700">= 900,000 NOVA</span>
-            </div>
+            <Zap className="w-3.5 h-3.5" /> Why 900,000 NOVA?
           </div>
 
           {/* Tokenomics bar */}
