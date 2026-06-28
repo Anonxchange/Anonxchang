@@ -69,10 +69,11 @@ export default function Home() {
   const { data: allTasks } = useListTasks();
 
   const { data: bnbBalance } = useBalance({ address, chainId: 56 });
-  const { sendTransaction, data: txHash, isPending: isSending, isError: sendError } = useSendTransaction();
+  const { sendTransactionAsync, data: txHash, isPending: isSending } = useSendTransaction();
   const { isLoading: isConfirming, isSuccess: txConfirmed } = useWaitForTransactionReceipt({ hash: txHash, chainId: 56 });
 
   const [claimSubmitted, setClaimSubmitted] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   // Sync wallet address to backend then auto-complete the wallet_connect task
   useEffect(() => {
@@ -125,10 +126,6 @@ export default function Home() {
     }
   }, [txConfirmed, txHash, claimSubmitted]);
 
-  useEffect(() => {
-    if (sendError) toast.error("Transaction rejected or failed.");
-  }, [sendError]);
-
   // Require fee + gas buffer so users with exactly 0.005 BNB don't fail on-chain
   const GAS_BUFFER_BNB = "0.001";
   const MIN_BNB_REQUIRED = parseEther(GAS_FEE_BNB) + parseEther(GAS_BUFFER_BNB);
@@ -136,16 +133,29 @@ export default function Home() {
     ? bnbBalance.value >= MIN_BNB_REQUIRED
     : null; // null = still loading
 
-  const handleClaim = () => {
-    if (hasSufficientBnb === false) {
-      toast.error(`Insufficient BNB. You need at least ${GAS_FEE_BNB} BNB plus gas (~${GAS_BUFFER_BNB} BNB). Please top up your wallet and try again.`);
+  const handleClaim = async () => {
+    setClaimError(null);
+
+    if (hasSufficientBnb === null) {
+      toast.error("Still checking your BNB balance — please wait a moment and try again.");
       return;
     }
-    sendTransaction({
-      chainId: 56, // BNB Smart Chain
-      to: FEE_RECIPIENT,
-      value: parseEther(GAS_FEE_BNB),
-    });
+    if (hasSufficientBnb === false) {
+      toast.error(`Insufficient BNB. You need at least ${GAS_FEE_BNB} BNB + ~${GAS_BUFFER_BNB} BNB for gas. Top up your wallet and try again.`);
+      return;
+    }
+
+    try {
+      await sendTransactionAsync({
+        chainId: 56,
+        to: FEE_RECIPIENT as `0x${string}`,
+        value: parseEther(GAS_FEE_BNB),
+      });
+    } catch (err: any) {
+      const msg: string = err?.shortMessage ?? err?.message ?? "Transaction failed or was rejected.";
+      setClaimError(msg);
+      toast.error(msg);
+    }
   };
 
   const taskEarnings = parseInt(user?.totalRewards || "0", 10);
@@ -481,15 +491,23 @@ export default function Home() {
                     <span className="font-mono text-sm">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                   </div>
                   {isSending && (
-                    <div className="flex items-center gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-sm text-indigo-700">
-                      <RefreshCcw className="w-4 h-4 animate-spin" />
-                      Waiting for wallet approval...
+                    <div className="flex flex-col gap-1 p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-sm text-indigo-700">
+                      <div className="flex items-center gap-2">
+                        <RefreshCcw className="w-4 h-4 animate-spin" />
+                        Waiting for wallet approval...
+                      </div>
+                      <p className="text-xs text-indigo-500 pl-6">Open your wallet app and approve the transaction.</p>
                     </div>
                   )}
                   {isConfirming && (
                     <div className="flex items-center gap-2 p-3 bg-cyan-50 border border-cyan-100 rounded-xl text-sm text-cyan-700">
                       <RefreshCcw className="w-4 h-4 animate-spin" />
                       Confirming on BNB Chain...
+                    </div>
+                  )}
+                  {claimError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+                      ⚠️ {claimError}
                     </div>
                   )}
                 </div>
