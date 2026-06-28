@@ -7,7 +7,7 @@ import { parseEther } from "viem";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Wallet, RefreshCcw, CheckCircle2, Zap, Clock, ShieldCheck } from "lucide-react";
+import { Copy, Wallet, RefreshCcw, CheckCircle2, Zap, Clock, ShieldCheck, ExternalLink, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -401,6 +401,64 @@ export default function Home() {
             <div className="flex items-start gap-2">
               <span className="text-indigo-500 font-bold flex-shrink-0">•</span>
               <span>NOVA is already <strong className="text-foreground">live on CoinGecko</strong> and actively traded. This is an early-holder distribution to grow the community before the next exchange listing.</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* ── NOVA on BNB Smart Chain ─────────────────────── */}
+      <Card className="glass-card border border-indigo-100 overflow-hidden">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-indigo-600" />
+              <span className="text-sm font-bold text-foreground">NOVA on BNB Smart Chain</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200">BSC</span>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">BEP-20</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col divide-y divide-border rounded-xl border border-border overflow-hidden">
+            {/* BscScan */}
+            <a
+              href="https://bscscan.com/token/0x17a858dab470f6f884e0a77e2f25e8a5dc34f98f"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-3 bg-white hover:bg-indigo-50/50 transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <img src="https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png" className="w-7 h-7 rounded-full" alt="NOVA" />
+                <div>
+                  <div className="text-sm font-semibold text-foreground">NOVA Token · BscScan</div>
+                  <div className="text-[11px] text-muted-foreground">BEP-20 · BNB Chain</div>
+                </div>
+              </div>
+              <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </a>
+
+            {/* CoinGecko */}
+            <a
+              href="https://www.coingecko.com/en/coins/nova-on-bnb"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between p-3 bg-white hover:bg-indigo-50/50 transition-colors"
+            >
+              <div>
+                <div className="text-sm font-semibold text-foreground">NOVA · CoinGecko Listed</div>
+                <div className="text-[11px] text-muted-foreground">Live price · check current rate</div>
+              </div>
+              <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </a>
+
+            {/* Network info */}
+            <div className="flex items-center justify-between p-3 bg-white">
+              <div>
+                <div className="text-sm font-semibold text-foreground">Network</div>
+                <div className="text-[11px] text-muted-foreground">BNB Smart Chain · Gas paid in BNB</div>
+              </div>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200">BEP-20</span>
             </div>
           </div>
         </CardContent>
