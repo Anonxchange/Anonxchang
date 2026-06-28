@@ -15,7 +15,12 @@ const MAX_TIER_BONUS = 900_000;
 export default function Referral() {
   const { telegramId, user } = useTelegram();
   const { data: stats, isLoading } = useGetReferralStats(telegramId, {
-    query: { enabled: !!telegramId, queryKey: getGetReferralStatsQueryKey(telegramId) }
+    query: {
+      enabled: !!telegramId,
+      queryKey: getGetReferralStatsQueryKey(telegramId),
+      refetchInterval: 10_000,
+      refetchIntervalInBackground: false,
+    }
   });
 
   const handleCopy = () => {
