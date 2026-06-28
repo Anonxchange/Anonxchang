@@ -62,7 +62,7 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-MINI_APP_URL = "https://anonxchang--airdropper06.replit.app"
+MINI_APP_URL = "https://best--airdropper.replit.dev"
 BOT_USERNAME = "Airdropperxbot"
 
 [[ports]]
