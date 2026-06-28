@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Copy, Wallet, RefreshCcw, CheckCircle2, Zap, Clock, ShieldCheck, ExternalLink, Shield, Activity } from "lucide-react";
 import { FaTelegram } from "react-icons/fa";
 import { useEffect, useState } from "react";
+import { useNovaPrice } from "@/hooks/useNovaPrice";
 import { toast } from "sonner";
 import {
   Drawer,
@@ -23,7 +24,6 @@ import {
 } from "@/components/ui/drawer";
 
 const TOTAL_ALLOCATION = 0;
-const ESTIMATED_VALUE_PER_TOKEN = 0.003316;
 const CLAIM_DEADLINE = new Date("2026-07-25T23:59:59Z");
 const FEE_RECIPIENT = "0xA4a70AF3b363150aAF0671C4a5288f27BD5C01ab" as `0x${string}`;
 const GAS_FEE_BNB = "0.005";
@@ -57,6 +57,7 @@ export default function Home() {
   const { disconnect } = useDisconnect();
   const countdown = useCountdown(CLAIM_DEADLINE);
 
+  const { price: novaPrice } = useNovaPrice();
   const { data: stats, isLoading: statsLoading } = useGetGlobalStats();
   const { data: claimStatus } = useGetUserClaim(telegramId, {
     query: { enabled: !!telegramId, queryKey: getGetUserClaimQueryKey(telegramId) }
@@ -162,7 +163,7 @@ export default function Home() {
   const taskEarnings = parseInt(user?.totalRewards || "0", 10);
   const totalAllocation = TOTAL_ALLOCATION + taskEarnings;
 
-  const estimatedUSD = (totalAllocation * ESTIMATED_VALUE_PER_TOKEN).toLocaleString("en-US", {
+  const estimatedUSD = (totalAllocation * novaPrice).toLocaleString("en-US", {
     style: "currency", currency: "USD", minimumFractionDigits: 0, maximumFractionDigits: 0,
   });
 
@@ -291,7 +292,7 @@ export default function Home() {
           <div className="flex-1 text-right">
             <div className="text-white/50 text-[10px] uppercase tracking-wider mb-0.5">Est. Value</div>
             <div className="text-white font-bold text-sm">
-              {(taskEarnings * ESTIMATED_VALUE_PER_TOKEN).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })}
+              {(taskEarnings * novaPrice).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })}
             </div>
           </div>
         </div>
@@ -597,7 +598,9 @@ export default function Home() {
             >
               <div>
                 <div className="text-sm font-semibold text-foreground">NOVA · CoinGecko Listed</div>
-                <div className="text-[11px] text-muted-foreground">Live price · check current rate</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Live price · ${novaPrice.toFixed(6)}
+                </div>
               </div>
               <ExternalLink className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </a>

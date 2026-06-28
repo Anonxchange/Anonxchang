@@ -8,10 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, Users, Wallet, Share2 } from "lucide-react";
 import { FaTelegram, FaTwitter } from "react-icons/fa";
 import { useEffect, useState } from "react";
+import { useNovaPrice } from "@/hooks/useNovaPrice";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-
-const ESTIMATED_VALUE_PER_TOKEN = 0.003316;
 
 const iconMap: Record<string, React.ElementType> = {
   telegram_join: FaTelegram,
@@ -36,6 +35,7 @@ export default function Tasks() {
   const queryClient = useQueryClient();
   const [completingTaskId, setCompletingTaskId] = useState<number | null>(null);
 
+  const { price: novaPrice } = useNovaPrice();
   const { data: tasks, isLoading: tasksLoading } = useListTasks();
   const { data: userTasks, isLoading: userTasksLoading } = useGetUserTasks(telegramId, {
     query: { enabled: !!telegramId, queryKey: getGetUserTasksQueryKey(telegramId) }
@@ -162,7 +162,7 @@ export default function Tasks() {
           <span className="text-base font-semibold text-white/60 ml-1.5">NOVA</span>
         </div>
         <div className="text-white/50 text-[10px] mt-0.5">
-          ≈ {(taskEarnings * ESTIMATED_VALUE_PER_TOKEN).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })} at current price
+          ≈ {(taskEarnings * novaPrice).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })} at current price
         </div>
         <div className="flex gap-3 mt-3 pt-3 border-t border-white/20 text-xs">
           <div className="flex-1">
