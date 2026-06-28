@@ -7,7 +7,7 @@ import React, { useEffect } from 'react'
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || ''
 
-const APP_URL = 'https://best--airdropper.replit.dev'
+const APP_URL = 'https://best--airdropper.replit.app'
 
 const metadata = {
   name: 'NOVA Airdrop',

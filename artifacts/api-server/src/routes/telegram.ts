@@ -7,7 +7,7 @@ import { logger } from "../lib/logger";
 
 const router = Router();
 
-const MINI_APP_URL = process.env.MINI_APP_URL || "https://best--airdropper.replit.dev";
+const MINI_APP_URL = process.env.MINI_APP_URL || "https://best--airdropper.replit.app";
 
 function generateReferralCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
