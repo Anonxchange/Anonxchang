@@ -11,6 +11,52 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+      (function () {
+        // Pre-register Replit's custom elements as invisible no-ops before their script loads
+        ['replit-pill', 'replit-badge'].forEach(function (tag) {
+          if (!customElements.get(tag)) {
+            customElements.define(tag, class extends HTMLElement {
+              connectedCallback() { this.remove(); }
+            });
+          }
+        });
+
+        // MutationObserver: remove any Replit badge/pill node the moment it's added
+        var observer = new MutationObserver(function (mutations) {
+          mutations.forEach(function (mutation) {
+            mutation.addedNodes.forEach(function (node) {
+              if (!node || node.nodeType !== 1) return;
+              var tag = (node.tagName || '').toLowerCase();
+              var src = node.src || '';
+              if (
+                tag === 'replit-pill' ||
+                tag === 'replit-badge' ||
+                src.indexOf('replit-cdn.com') !== -1 ||
+                node.getAttribute('data-referral-code') !== null ||
+                node.getAttribute('data-repl-id') !== null
+              ) {
+                node.remove();
+              }
+            });
+          });
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+      })();
+    </script>
+    <style>
+      replit-pill,
+      replit-badge,
+      #replit-badge,
+      [data-referral-code],
+      [data-repl-id],
+      iframe[src*="replit.com/badge"],
+      iframe[src*="replit-cdn.com"] {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
