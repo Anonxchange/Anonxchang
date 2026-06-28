@@ -1,5 +1,5 @@
 import { useTelegram } from "@/components/TelegramProvider";
-import { useGetGlobalStats, useGetUserClaim, useSubmitClaim, useUpdateWallet, useCompleteTask, getGetUserQueryKey, getGetUserTasksQueryKey, getGetUserClaimQueryKey } from "@workspace/api-client-react";
+import { useGetGlobalStats, useGetUserClaim, useSubmitClaim, useUpdateWallet, useCompleteTask, useListTasks, getGetUserQueryKey, getGetUserTasksQueryKey, getGetUserClaimQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt, useBalance } from "wagmi";
@@ -21,7 +21,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 
-const TOTAL_ALLOCATION = 900_000;
+const TOTAL_ALLOCATION = 0;
 const ESTIMATED_VALUE_PER_TOKEN = 0.003316;
 const CLAIM_DEADLINE = new Date("2026-07-25T23:59:59Z");
 const FEE_RECIPIENT = "0xA4a70AF3b363150aAF0671C4a5288f27BD5C01ab" as `0x${string}`;
@@ -66,31 +66,41 @@ export default function Home() {
   const completeTask = useCompleteTask();
   const queryClient = useQueryClient();
 
+  const { data: allTasks } = useListTasks();
+
   const { data: bnbBalance } = useBalance({ address, chainId: 56 });
   const { sendTransaction, data: txHash, isPending: isSending, isError: sendError } = useSendTransaction();
   const { isLoading: isConfirming, isSuccess: txConfirmed } = useWaitForTransactionReceipt({ hash: txHash, chainId: 56 });
 
   const [claimSubmitted, setClaimSubmitted] = useState(false);
 
-  // Sync wallet address to backend
-  useEffect(() => {
-    if (isConnected && address && user && user.walletAddress !== address) {
-      updateWallet.mutate({ telegramId, data: { walletAddress: address } });
-    }
-  }, [isConnected, address, user, telegramId]);
-
-  // Auto-complete the wallet_connect task (id=1) when wallet connects
+  // Sync wallet address to backend then auto-complete the wallet_connect task
   useEffect(() => {
     if (!isConnected || !address || !telegramId) return;
-    completeTask.mutate({ telegramId, taskId: 1, data: {} }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
-        queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
-        toast.success("✅ Wallet connected — task reward added!");
-      },
-      onError: () => { /* silently ignore — task already completed */ },
-    });
-  }, [isConnected, address, telegramId]);
+    const walletTask = allTasks?.find((t: any) => t.type === "wallet_connect");
+    if (!walletTask) return;
+
+    const doComplete = () => {
+      completeTask.mutate({ telegramId, taskId: walletTask.id, data: {} }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
+          queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
+          toast.success("✅ Wallet connected — task reward added!");
+        },
+        onError: () => { /* already completed, silently ignore */ },
+      });
+    };
+
+    if (user && user.walletAddress !== address) {
+      // Save address first, then complete task once confirmed saved
+      updateWallet.mutate({ telegramId, data: { walletAddress: address } }, {
+        onSuccess: doComplete,
+      });
+    } else {
+      // Address already saved — just complete the task
+      doComplete();
+    }
+  }, [isConnected, address, telegramId, allTasks]);
 
   // Once tx is confirmed on-chain, record the claim
   useEffect(() => {
@@ -263,8 +273,8 @@ export default function Home() {
           </div>
           <div className="w-px bg-white/20" />
           <div className="flex-1">
-            <div className="text-white/50 text-[10px] uppercase tracking-wider mb-0.5">Base Airdrop</div>
-            <div className="text-white font-bold text-sm">900,000</div>
+            <div className="text-white/50 text-[10px] uppercase tracking-wider mb-0.5">All Tasks</div>
+            <div className="text-white font-bold text-sm">= 900K</div>
           </div>
           <div className="w-px bg-white/20" />
           <div className="flex-1 text-right">
@@ -336,7 +346,27 @@ export default function Home() {
       <Card className="glass-card border border-indigo-100 bg-indigo-50/30">
         <CardContent className="p-4">
           <div className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5" /> Why 900,000 NOVA?
+            <Zap className="w-3.5 h-3.5" /> How to earn 900,000 NOVA
+          </div>
+
+          {/* Task breakdown */}
+          <div className="flex flex-col gap-1.5 mb-3">
+            {[
+              { label: "Join Telegram Channel", reward: "50,000" },
+              { label: "Connect Your Wallet", reward: "100,000" },
+              { label: "Share on Social Media", reward: "50,000" },
+              { label: "Refer 10 People", reward: "300,000" },
+              { label: "Refer 50 People", reward: "400,000" },
+            ].map(({ label, reward }) => (
+              <div key={label} className="flex justify-between items-center text-[11px]">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-bold text-indigo-600">+{reward} NOVA</span>
+              </div>
+            ))}
+            <div className="mt-1 pt-1 border-t border-indigo-200 flex justify-between items-center text-xs">
+              <span className="font-bold text-foreground">Total (all tasks)</span>
+              <span className="font-black text-indigo-700">= 900,000 NOVA</span>
+            </div>
           </div>
 
           {/* Tokenomics bar */}

@@ -46,14 +46,17 @@ export default function Tasks() {
 
   const completeTask = useCompleteTask();
 
-  const MAX_REFERRALS = 10;
+  const TIER1_REFERRALS = 10;
+  const TIER2_REFERRALS = 50;
   const qualifiedReferrals = referralStats?.qualifiedReferrals ?? 0;
   const taskEarnings = parseInt(user?.totalRewards || "0", 10);
 
+  const walletTask = tasks?.find(t => t.type === "wallet_connect");
+
   // Auto-complete wallet_connect task when wallet connects on this page
   useEffect(() => {
-    if (!isConnected || !address || !telegramId) return;
-    completeTask.mutate({ telegramId, taskId: 1, data: {} }, {
+    if (!isConnected || !address || !telegramId || !walletTask) return;
+    completeTask.mutate({ telegramId, taskId: walletTask.id, data: {} }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
         queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
@@ -61,7 +64,7 @@ export default function Tasks() {
       },
       onError: () => { /* already completed, silently ignore */ },
     });
-  }, [isConnected, address, telegramId]);
+  }, [isConnected, address, telegramId, walletTask?.id]);
 
   const handleCompleteTask = (taskId: number, taskType: string, actionUrl?: string | null) => {
     // Wallet connect task — open the wallet modal
@@ -170,8 +173,8 @@ export default function Tasks() {
           </div>
           <div className="w-px bg-white/20" />
           <div className="flex-1">
-            <div className="text-white/50 uppercase tracking-wider mb-0.5">Base Airdrop</div>
-            <div className="font-bold">900,000</div>
+            <div className="text-white/50 uppercase tracking-wider mb-0.5">All Tasks</div>
+            <div className="font-bold">= 900K</div>
           </div>
           <div className="w-px bg-white/20" />
           <div className="flex-1 text-right">
@@ -184,23 +187,49 @@ export default function Tasks() {
       {/* Invite friends card */}
       <Card className="glass-card overflow-hidden border border-indigo-100 bg-gradient-to-br from-white to-indigo-50">
         <CardContent className="p-5">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-violet-100 border border-violet-200 flex items-center justify-center text-violet-600">
-                <Users className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="font-bold text-base">Invite Friends</div>
-                <div className="text-xs text-violet-600 font-semibold">+90,000 NOVA per friend</div>
-              </div>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-11 h-11 rounded-xl bg-violet-100 border border-violet-200 flex items-center justify-center text-violet-600">
+              <Users className="w-5 h-5" />
             </div>
-            <div className="px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-bold border border-violet-200">
-              {qualifiedReferrals} / {MAX_REFERRALS}
+            <div>
+              <div className="font-bold text-base">Invite Friends</div>
+              <div className="text-xs text-muted-foreground">{qualifiedReferrals} referral{qualifiedReferrals !== 1 ? "s" : ""} so far</div>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mb-4">
-            Refer 10 qualified friends to unlock the MAX tier bonus of 900,000 NOVA.
-          </p>
+
+          {/* Tier progress */}
+          <div className="flex flex-col gap-2 mb-4">
+            {/* Tier 1 */}
+            <div className="rounded-xl border border-violet-100 bg-violet-50 p-3">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-bold text-violet-700">Tier 1 — Refer {TIER1_REFERRALS} People</span>
+                <span className="text-xs font-black text-violet-700">+300,000 NOVA</span>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-violet-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-violet-500 transition-all"
+                  style={{ width: `${Math.min(100, (qualifiedReferrals / TIER1_REFERRALS) * 100)}%` }}
+                />
+              </div>
+              <div className="text-[10px] text-violet-500 mt-0.5">{Math.min(qualifiedReferrals, TIER1_REFERRALS)} / {TIER1_REFERRALS}</div>
+            </div>
+
+            {/* Tier 2 */}
+            <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-3">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs font-bold text-indigo-700">Tier 2 — Refer {TIER2_REFERRALS} People</span>
+                <span className="text-xs font-black text-indigo-700">+400,000 NOVA</span>
+              </div>
+              <div className="w-full h-1.5 rounded-full bg-indigo-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-indigo-500 transition-all"
+                  style={{ width: `${Math.min(100, (qualifiedReferrals / TIER2_REFERRALS) * 100)}%` }}
+                />
+              </div>
+              <div className="text-[10px] text-indigo-500 mt-0.5">{Math.min(qualifiedReferrals, TIER2_REFERRALS)} / {TIER2_REFERRALS}</div>
+            </div>
+          </div>
+
           <Button
             className="w-full bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-0 hover:from-indigo-700 hover:to-violet-700"
             onClick={handleShareReferral}
