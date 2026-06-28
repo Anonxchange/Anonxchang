@@ -471,19 +471,6 @@ export default function Home() {
                     <span className="text-muted-foreground text-sm">Your Wallet</span>
                     <span className="font-mono text-sm">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                   </div>
-                  {/* BNB Balance */}
-                  <div className={`flex justify-between items-center p-4 rounded-xl border ${hasSufficientBnb === false ? "bg-red-50 border-red-200" : "bg-secondary border-border"}`}>
-                    <span className="text-muted-foreground text-sm">BNB Balance</span>
-                    <span className={`font-semibold text-sm ${hasSufficientBnb === false ? "text-red-600" : ""}`}>
-                      {bnbBalance ? `${(Number(bnbBalance.value) / 10 ** bnbBalance.decimals).toFixed(4)} BNB` : "Loading..."}
-                    </span>
-                  </div>
-                  {hasSufficientBnb === false && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
-                      ⚠️ Your BNB balance is too low to pay the network fee. You need at least <strong>{GAS_FEE_BNB} BNB</strong>. Please top up your wallet before claiming.
-                    </div>
-                  )}
-
                   {isSending && (
                     <div className="flex items-center gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-sm text-indigo-700">
                       <RefreshCcw className="w-4 h-4 animate-spin" />
