@@ -1,7 +1,7 @@
 import { useTelegram } from "@/components/TelegramProvider";
 import { useGetGlobalStats, useGetUserClaim, useSubmitClaim, useUpdateWallet, useCompleteTask, getGetUserQueryKey, getGetUserTasksQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useWeb3Modal } from "@web3modal/wagmi/react";
+import { useAppKit } from "@reown/appkit/react";
 import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt, useBalance } from "wagmi";
 import { parseEther } from "viem";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ function pad(n: number) { return String(n).padStart(2, "0"); }
 
 export default function Home() {
   const { telegramId, user } = useTelegram();
-  const { open } = useWeb3Modal();
+  const { open } = useAppKit();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const countdown = useCountdown(CLAIM_DEADLINE);

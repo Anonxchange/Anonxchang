@@ -75,8 +75,9 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@reown/appkit": "^1.8.21",
+    "@reown/appkit-adapter-wagmi": "^1.8.21",
     "@wagmi/core": "^3.5.5",
-    "@web3modal/wagmi": "^5.1.11",
     "viem": "^2.53.1",
     "wagmi": "^3.6.21"
   }

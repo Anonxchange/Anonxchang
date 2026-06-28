@@ -1,11 +1,11 @@
-import { createWeb3Modal } from '@web3modal/wagmi/react'
-import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
+import { createAppKit } from '@reown/appkit/react'
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
+import { bsc } from '@reown/appkit/networks'
 import { WagmiProvider, useReconnect } from 'wagmi'
-import { bsc } from 'wagmi/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React, { useEffect } from 'react'
 
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'b56e18d47c72ab683b10814fe9495694'
+const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || ''
 
 const APP_URL = 'https://anonxchang--airdropper06.replit.app'
 
@@ -16,18 +16,27 @@ const metadata = {
   icons: ['https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png']
 }
 
-const chains = [bsc] as const
-const config = defaultWagmiConfig({
-  chains,
+const networks = [bsc] as const
+
+const wagmiAdapter = new WagmiAdapter({
+  networks,
   projectId,
-  metadata,
   ssr: false,
 })
 
-createWeb3Modal({
-  wagmiConfig: config,
+createAppKit({
+  adapters: [wagmiAdapter],
+  networks,
   projectId,
-  enableAnalytics: false,
+  metadata,
+  features: {
+    analytics: false,
+    email: false,
+    socials: false,
+    emailShowWallets: false,
+    onramp: false,
+    swaps: false,
+  },
   themeMode: 'light',
   themeVariables: {
     '--w3m-accent': '#4f46e5',
@@ -42,25 +51,17 @@ createWeb3Modal({
 
 const queryClient = new QueryClient()
 
-/**
- * Telegram Mini App backgrounding fix:
- * When the user leaves to approve in Trust Wallet and returns, the WalletConnect
- * WebSocket relay drops. This component reconnects it the moment the app is visible again.
- */
 function WalletReconnect() {
   const { reconnect } = useReconnect()
 
   useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState === 'visible') {
-        reconnect()
-      }
+      if (document.visibilityState === 'visible') reconnect()
     }
     const onFocus = () => reconnect()
 
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('focus', onFocus)
-
     return () => {
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('focus', onFocus)
@@ -72,7 +73,7 @@ function WalletReconnect() {
 
 export function Web3Provider({ children }: { children: React.ReactNode }) {
   return (
-    <WagmiProvider config={config} reconnectOnMount>
+    <WagmiProvider config={wagmiAdapter.wagmiConfig} reconnectOnMount>
       <QueryClientProvider client={queryClient}>
         <WalletReconnect />
         {children}
