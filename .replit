@@ -64,6 +64,7 @@ channel = "stable-25_05"
 [userenv.shared]
 MINI_APP_URL = "https://best--airdropper.replit.app"
 BOT_USERNAME = "Airdropperxbot"
+VITE_WALLETCONNECT_PROJECT_ID = "778e2497d177bfdbd7d03c9f89c03ee1"
 
 [[ports]]
 localPort = 8080
