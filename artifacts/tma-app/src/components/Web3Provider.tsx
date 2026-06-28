@@ -1,6 +1,6 @@
 import { createAppKit } from '@reown/appkit/react'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
-import { bsc } from '@reown/appkit/networks'
+import { bsc, type AppKitNetwork } from '@reown/appkit/networks'
 import { WagmiProvider, useReconnect, cookieStorage, createStorage } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React, { useEffect } from 'react'
@@ -16,7 +16,7 @@ const metadata = {
   icons: ['https://coin-images.coingecko.com/coins/images/52975/large/NOVA_Logo.png']
 }
 
-const networks = [bsc] as const
+const networks = [bsc] as [AppKitNetwork, ...AppKitNetwork[]]
 
 const wagmiAdapter = new WagmiAdapter({
   networks,

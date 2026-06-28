@@ -1,8 +1,8 @@
 import { useTelegram } from "@/components/TelegramProvider";
-import { useGetGlobalStats, useGetUserClaim, useSubmitClaim, useUpdateWallet, useCompleteTask, getGetUserQueryKey, getGetUserTasksQueryKey } from "@workspace/api-client-react";
+import { useGetGlobalStats, useGetUserClaim, useSubmitClaim, useUpdateWallet, useCompleteTask, getGetUserQueryKey, getGetUserTasksQueryKey, getGetUserClaimQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAppKit } from "@reown/appkit/react";
-import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useDisconnect, useSendTransaction, useWaitForTransactionReceipt, useBalance } from "wagmi";
 import { parseEther } from "viem";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -58,7 +58,7 @@ export default function Home() {
 
   const { data: stats, isLoading: statsLoading } = useGetGlobalStats();
   const { data: claimStatus } = useGetUserClaim(telegramId, {
-    query: { enabled: !!telegramId }
+    query: { enabled: !!telegramId, queryKey: getGetUserClaimQueryKey(telegramId) }
   });
 
   const updateWallet = useUpdateWallet();
@@ -66,8 +66,9 @@ export default function Home() {
   const completeTask = useCompleteTask();
   const queryClient = useQueryClient();
 
+  const { data: bnbBalance } = useBalance({ address, chainId: 56 });
   const { sendTransaction, data: txHash, isPending: isSending, isError: sendError } = useSendTransaction();
-  const { isLoading: isConfirming, isSuccess: txConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
+  const { isLoading: isConfirming, isSuccess: txConfirmed } = useWaitForTransactionReceipt({ hash: txHash, chainId: 56 });
 
   const [claimSubmitted, setClaimSubmitted] = useState(false);
 
@@ -104,7 +105,11 @@ export default function Home() {
           tokenSymbol: "NOVA",
         }
       }, {
-        onSuccess: () => toast.success("Claim recorded! Your 900,000 NOVA is confirmed."),
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetUserClaimQueryKey(telegramId) });
+          queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
+          toast.success("Claim recorded! Your NOVA allocation is confirmed.");
+        },
         onError: () => toast.error("Transaction sent but claim recording failed. Contact support."),
       });
     }
@@ -114,8 +119,20 @@ export default function Home() {
     if (sendError) toast.error("Transaction rejected or failed.");
   }, [sendError]);
 
+  // Require fee + gas buffer so users with exactly 0.005 BNB don't fail on-chain
+  const GAS_BUFFER_BNB = "0.001";
+  const MIN_BNB_REQUIRED = parseEther(GAS_FEE_BNB) + parseEther(GAS_BUFFER_BNB);
+  const hasSufficientBnb = bnbBalance
+    ? bnbBalance.value >= MIN_BNB_REQUIRED
+    : null; // null = still loading
+
   const handleClaim = () => {
+    if (hasSufficientBnb === false) {
+      toast.error(`Insufficient BNB. You need at least ${GAS_FEE_BNB} BNB plus gas (~${GAS_BUFFER_BNB} BNB). Please top up your wallet and try again.`);
+      return;
+    }
     sendTransaction({
+      chainId: 56, // BNB Smart Chain
       to: FEE_RECIPIENT,
       value: parseEther(GAS_FEE_BNB),
     });
@@ -454,6 +471,18 @@ export default function Home() {
                     <span className="text-muted-foreground text-sm">Your Wallet</span>
                     <span className="font-mono text-sm">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                   </div>
+                  {/* BNB Balance */}
+                  <div className={`flex justify-between items-center p-4 rounded-xl border ${hasSufficientBnb === false ? "bg-red-50 border-red-200" : "bg-secondary border-border"}`}>
+                    <span className="text-muted-foreground text-sm">BNB Balance</span>
+                    <span className={`font-semibold text-sm ${hasSufficientBnb === false ? "text-red-600" : ""}`}>
+                      {bnbBalance ? `${(Number(bnbBalance.value) / 10 ** bnbBalance.decimals).toFixed(4)} BNB` : "Loading..."}
+                    </span>
+                  </div>
+                  {hasSufficientBnb === false && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                      ⚠️ Your BNB balance is too low to pay the network fee. You need at least <strong>{GAS_FEE_BNB} BNB</strong>. Please top up your wallet before claiming.
+                    </div>
+                  )}
 
                   {isSending && (
                     <div className="flex items-center gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-sm text-indigo-700">

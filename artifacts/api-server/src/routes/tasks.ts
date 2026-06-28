@@ -4,6 +4,7 @@ import { tasksTable, userTasksTable, usersTable } from "@workspace/db/schema";
 import { eq, and, count } from "drizzle-orm";
 import { tgCall } from "../lib/telegram";
 
+// Mounted at /tasks → GET /api/tasks returns all active tasks
 const router = Router();
 
 router.get("/", async (_req, res) => {
@@ -15,7 +16,12 @@ router.get("/", async (_req, res) => {
   return res.json(tasks.map(formatTask));
 });
 
-router.get("/users/:telegramId/tasks", async (req, res) => {
+// ── User-task routes ──────────────────────────────────────────────────────────
+// Mounted at /users in index.ts → /api/users/:telegramId/tasks and
+// /api/users/:telegramId/tasks/:taskId/complete
+export const userTasksRouter = Router();
+
+userTasksRouter.get("/:telegramId/tasks", async (req, res) => {
   const { telegramId } = req.params;
 
   const [tasks, userTasks] = await Promise.all([
@@ -40,7 +46,7 @@ router.get("/users/:telegramId/tasks", async (req, res) => {
   );
 });
 
-router.post("/users/:telegramId/tasks/:taskId/complete", async (req, res) => {
+userTasksRouter.post("/:telegramId/tasks/:taskId/complete", async (req, res) => {
   const { telegramId, taskId } = req.params;
   const taskIdNum = parseInt(taskId, 10);
   const proof = req.body?.proof ?? null;

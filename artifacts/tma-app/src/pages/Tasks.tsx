@@ -1,5 +1,5 @@
 import { useTelegram } from "@/components/TelegramProvider";
-import { useListTasks, useGetUserTasks, useCompleteTask, useGetReferralStats, getGetUserTasksQueryKey, getGetUserQueryKey } from "@workspace/api-client-react";
+import { useListTasks, useGetUserTasks, useCompleteTask, useGetReferralStats, getGetUserTasksQueryKey, getGetUserQueryKey, getGetReferralStatsQueryKey } from "@workspace/api-client-react";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount } from "wagmi";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,10 +38,10 @@ export default function Tasks() {
 
   const { data: tasks, isLoading: tasksLoading } = useListTasks();
   const { data: userTasks, isLoading: userTasksLoading } = useGetUserTasks(telegramId, {
-    query: { enabled: !!telegramId }
+    query: { enabled: !!telegramId, queryKey: getGetUserTasksQueryKey(telegramId) }
   });
   const { data: referralStats } = useGetReferralStats(telegramId, {
-    query: { enabled: !!telegramId }
+    query: { enabled: !!telegramId, queryKey: getGetReferralStatsQueryKey(telegramId) }
   });
 
   const completeTask = useCompleteTask();

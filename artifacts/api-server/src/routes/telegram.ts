@@ -174,6 +174,16 @@ async function handleReferral(chatId: number, telegramId: number) {
 }
 
 router.post("/webhook", async (req, res) => {
+  // Verify Telegram webhook secret token if configured
+  const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const incomingSecret = req.headers["x-telegram-bot-api-secret-token"];
+    if (incomingSecret !== webhookSecret) {
+      res.sendStatus(403);
+      return;
+    }
+  }
+
   res.sendStatus(200);
 
   const update = req.body;

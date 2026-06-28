@@ -26,6 +26,12 @@ app.listen(port, async (err) => {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
   if (botToken && replitDomain) {
+    if (!process.env.TELEGRAM_WEBHOOK_SECRET) {
+      logger.warn(
+        "TELEGRAM_WEBHOOK_SECRET is not set — the /api/telegram/webhook endpoint will accept " +
+        "unauthenticated requests. Set this secret and re-register the webhook to secure the bot."
+      );
+    }
     const webhookUrl = `https://${replitDomain}/api/telegram/webhook`;
     try {
       const result = await setWebhook(webhookUrl);

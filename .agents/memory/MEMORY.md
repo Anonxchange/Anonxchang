@@ -1,0 +1,3 @@
+- [Monorepo migration](monorepo-migration.md) — pnpm install restores node_modules; DB schema must be applied manually via executeSql after first provision.
+- [Webhook security pattern](webhook-security.md) — TELEGRAM_WEBHOOK_SECRET optional but warned at startup; always pair setWebhook secret_token with header validation.
+- [TMA app type fixes](tma-type-fixes.md) — tgCall needs explicit Promise<any>; networks needs [AppKitNetwork,...] cast; query hooks need queryKey in options.

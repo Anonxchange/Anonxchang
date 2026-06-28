@@ -1,5 +1,5 @@
 import { useTelegram } from "@/components/TelegramProvider";
-import { useGetReferralStats } from "@workspace/api-client-react";
+import { useGetReferralStats, getGetReferralStatsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -15,7 +15,7 @@ const MAX_TIER_BONUS = 900_000;
 export default function Referral() {
   const { telegramId, user } = useTelegram();
   const { data: stats, isLoading } = useGetReferralStats(telegramId, {
-    query: { enabled: !!telegramId }
+    query: { enabled: !!telegramId, queryKey: getGetReferralStatsQueryKey(telegramId) }
   });
 
   const handleCopy = () => {
