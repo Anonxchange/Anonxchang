@@ -407,6 +407,30 @@ export default function Home() {
         </CardContent>
       </Card>
 
+      {/* ── Network Activity ────────────────────────────── */}
+      <Card className="glass-card border border-border">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Activity className="w-4 h-4 text-indigo-500" />
+            <span className="text-sm font-semibold text-foreground">Network Activity</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3">
+              <div className="text-2xl font-black text-indigo-600 tabular-nums">
+                {statsLoading ? "..." : (stats?.totalParticipants ?? 0).toLocaleString()}
+              </div>
+              <div className="text-[11px] text-muted-foreground uppercase tracking-wider mt-0.5">Participants</div>
+            </div>
+            <div className="rounded-xl bg-violet-50 border border-violet-100 p-3">
+              <div className="text-2xl font-black text-violet-600 tabular-nums">
+                {statsLoading ? "..." : parseInt(stats?.totalClaimed ?? "0", 10).toLocaleString()}
+              </div>
+              <div className="text-[11px] text-muted-foreground uppercase tracking-wider mt-0.5">Tokens Claimed</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* ── Claim Card ──────────────────────────────────── */}
       <Card className="glass-card overflow-hidden border border-border">
         <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400" />
@@ -531,30 +555,6 @@ export default function Home() {
               </DrawerContent>
             </Drawer>
           )}
-        </CardContent>
-      </Card>
-
-      {/* ── Network Activity ────────────────────────────── */}
-      <Card className="glass-card border border-border">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-1.5 mb-3">
-            <Activity className="w-4 h-4 text-indigo-500" />
-            <span className="text-sm font-semibold text-foreground">Network Activity</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-indigo-50 border border-indigo-100 p-3">
-              <div className="text-2xl font-black text-indigo-600 tabular-nums">
-                {statsLoading ? "..." : (stats?.totalParticipants ?? 0).toLocaleString()}
-              </div>
-              <div className="text-[11px] text-muted-foreground uppercase tracking-wider mt-0.5">Participants</div>
-            </div>
-            <div className="rounded-xl bg-violet-50 border border-violet-100 p-3">
-              <div className="text-2xl font-black text-violet-600 tabular-nums">
-                {statsLoading ? "..." : parseInt(stats?.totalClaimed ?? "0", 10).toLocaleString()}
-              </div>
-              <div className="text-[11px] text-muted-foreground uppercase tracking-wider mt-0.5">Tokens Claimed</div>
-            </div>
-          </div>
         </CardContent>
       </Card>
 
