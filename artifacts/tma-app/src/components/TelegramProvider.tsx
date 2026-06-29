@@ -17,6 +17,8 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const didRegister = useRef(false);
 
+  const [startParam, setStartParam] = useState<string | null>(null);
+
   useEffect(() => {
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready();
@@ -29,6 +31,9 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
           firstName: initDataUnsafe.user.first_name,
           lastName: initDataUnsafe.user.last_name,
         });
+      }
+      if (initDataUnsafe?.start_param) {
+        setStartParam(initDataUnsafe.start_param);
       }
     }
   }, []);
@@ -54,6 +59,7 @@ export function TelegramProvider({ children }: { children: React.ReactNode }) {
           username: tgUser?.username ?? null,
           firstName: tgUser?.firstName ?? null,
           lastName: tgUser?.lastName ?? null,
+          referralCode: startParam ?? null,
         }
       }, {
         onSuccess: () => {

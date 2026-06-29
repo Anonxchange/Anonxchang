@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { usersTable, tasksTable, userTasksTable } from "@workspace/db/schema";
+import { eq, and, count } from "drizzle-orm";
 
 const router = Router();
 
@@ -12,6 +12,73 @@ function generateReferralCode(): string {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
   return code;
+}
+
+async function creditReferralTasks(referrerCode: string) {
+  const referrers = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.referralCode, referrerCode))
+    .limit(1);
+  if (referrers.length === 0) return;
+  const referrer = referrers[0];
+
+  const [{ total: referralCount }] = await db
+    .select({ total: count() })
+    .from(usersTable)
+    .where(eq(usersTable.referredBy, referrerCode));
+
+  const referralTasks = await db
+    .select()
+    .from(tasksTable)
+    .where(eq(tasksTable.type, "referral"));
+
+  for (const task of referralTasks) {
+    const required = task.requiredCount ?? 1;
+    if ((referralCount ?? 0) < required) continue;
+
+    const existing = await db
+      .select({ isCompleted: userTasksTable.isCompleted })
+      .from(userTasksTable)
+      .where(
+        and(
+          eq(userTasksTable.telegramId, referrer.telegramId),
+          eq(userTasksTable.taskId, task.id)
+        )
+      )
+      .limit(1);
+
+    if (existing[0]?.isCompleted) continue;
+
+    if (existing.length > 0) {
+      await db
+        .update(userTasksTable)
+        .set({ isCompleted: true, completedAt: new Date() })
+        .where(
+          and(
+            eq(userTasksTable.telegramId, referrer.telegramId),
+            eq(userTasksTable.taskId, task.id)
+          )
+        );
+    } else {
+      await db.insert(userTasksTable).values({
+        telegramId: referrer.telegramId,
+        taskId: task.id,
+        isCompleted: true,
+        completedAt: new Date(),
+      });
+    }
+
+    const reward = parseInt(task.rewardAmount || "0", 10);
+    if (reward > 0) {
+      const current = parseInt(referrer.totalRewards || "0", 10);
+      await db
+        .update(usersTable)
+        .set({ totalRewards: String(current + reward) })
+        .where(eq(usersTable.telegramId, referrer.telegramId));
+      referrer.totalRewards = String(current + reward);
+    }
+  }
 }
 
 router.post("/register", async (req, res) => {
@@ -51,6 +118,10 @@ router.post("/register", async (req, res) => {
         totalRewards: "0",
       })
       .returning();
+
+    if (referralCode) {
+      await creditReferralTasks(referralCode).catch(() => {});
+    }
 
     return res.status(201).json(formatUser(user));
   } catch (err: any) {
