@@ -94,13 +94,13 @@ export default function Home() {
       });
     };
 
-    if (user && user.walletAddress !== address) {
+    if (!user || user.walletAddress !== address) {
       // Save address first, then complete task once confirmed saved
       updateWallet.mutate({ telegramId, data: { walletAddress: address } }, {
         onSuccess: doComplete,
       });
     } else {
-      // Address already saved — just complete the task
+      // Address already matches — just complete the task
       doComplete();
     }
   }, [isConnected, address, telegramId, allTasks]);
