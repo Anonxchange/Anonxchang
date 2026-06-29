@@ -8,6 +8,31 @@
     <meta name="robots" content="index, follow" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+      // Patch window.open for Telegram WebApp compatibility.
+      // Telegram's WebView blocks window.open(), breaking wallet deep links.
+      // Route https:// links through Telegram.WebApp.openLink(),
+      // and custom scheme links (trust://, metamask://, wc:) via location.href.
+      (function () {
+        var _origOpen = window.open.bind(window);
+        window.open = function (url, target, features) {
+          if (!url) return _origOpen(url, target, features);
+          var s = String(url);
+          var tg = window.Telegram && window.Telegram.WebApp;
+          if (tg) {
+            if (s.startsWith('https://') || s.startsWith('http://')) {
+              try { tg.openLink(s); } catch (e) { _origOpen(url, target, features); }
+              return null;
+            }
+            if (/^(trust|metamask|wc|binance|exodus|rainbow|zerion|coinbase|1inch):/.test(s)) {
+              window.location.href = s;
+              return null;
+            }
+          }
+          return _origOpen(url, target, features);
+        };
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
