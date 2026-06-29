@@ -11,21 +11,58 @@
     <script>
       // Patch window.open for Telegram WebApp compatibility.
       // Telegram's WebView blocks window.open(), breaking wallet deep links.
-      // Route https:// links through Telegram.WebApp.openLink(),
-      // and custom scheme links (trust://, metamask://, wc:) via location.href.
+      // Fix window.open() inside Telegram's WebView (WKWebView on iOS blocks it).
+      // Strategy:
+      //   - Wallet universal links (link.trustwallet.com, metamask.app.link, etc.)
+      //     → window.location.href so iOS intercepts the universal link and opens
+      //       the wallet app directly (tg.openLink opens Telegram's in-app browser
+      //       which cannot trigger universal links).
+      //   - Custom wallet schemes (trust://, metamask://, wc:, etc.)
+      //     → window.location.href to let the OS route to the wallet.
+      //   - All other https links (e.g. WalletConnect relay pages)
+      //     → tg.openLink() to open in an external browser.
       (function () {
         var _origOpen = window.open.bind(window);
+
+        var WALLET_UNIVERSAL_DOMAINS = [
+          'link.trustwallet.com',
+          'metamask.app.link',
+          'go.cb-w.com',          // Coinbase Wallet
+          'wallet.coinbase.com',
+          'app.zerion.io',
+          'bnc.lt',               // Binance / BNB Chain
+          'rainbow.me',
+          '1inch.io',
+          'exodus.com',
+          'walletconnect.com',    // WalletConnect redirect pages
+          'walletconnect.org',
+        ];
+
+        function isWalletUniversalLink(url) {
+          for (var i = 0; i < WALLET_UNIVERSAL_DOMAINS.length; i++) {
+            if (url.indexOf(WALLET_UNIVERSAL_DOMAINS[i]) !== -1) return true;
+          }
+          return false;
+        }
+
         window.open = function (url, target, features) {
           if (!url) return _origOpen(url, target, features);
           var s = String(url);
           var tg = window.Telegram && window.Telegram.WebApp;
           if (tg) {
-            if (s.startsWith('https://') || s.startsWith('http://')) {
-              try { tg.openLink(s); } catch (e) { _origOpen(url, target, features); }
+            // Wallet universal links — must use location.href for iOS universal link interception
+            if (isWalletUniversalLink(s)) {
+              window.location.href = s;
               return null;
             }
+            // Custom wallet URI schemes
             if (/^(trust|metamask|wc|binance|exodus|rainbow|zerion|coinbase|1inch):/.test(s)) {
               window.location.href = s;
+              return null;
+            }
+            // Any other external https link — open in external browser via Telegram
+            if (s.startsWith('https://') || s.startsWith('http://')) {
+              try { tg.openLink(s); } catch (e) { _origOpen(url, target, features); }
               return null;
             }
           }
