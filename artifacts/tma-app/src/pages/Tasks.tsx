@@ -1,5 +1,5 @@
 import { useTelegram } from "@/components/TelegramProvider";
-import { useListTasks, useGetUserTasks, useCompleteTask, useGetReferralStats, getGetUserTasksQueryKey, getGetUserQueryKey, getGetReferralStatsQueryKey } from "@workspace/api-client-react";
+import { useListTasks, useGetUserTasks, useCompleteTask, useUpdateWallet, useGetReferralStats, getGetUserTasksQueryKey, getGetUserQueryKey, getGetReferralStatsQueryKey } from "@workspace/api-client-react";
 import { useAppKit } from "@reown/appkit/react";
 import { useAccount } from "wagmi";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,6 +45,7 @@ export default function Tasks() {
   });
 
   const completeTask = useCompleteTask();
+  const updateWallet = useUpdateWallet();
 
   const TIER1_REFERRALS = 10;
   const TIER2_REFERRALS = 50;
@@ -56,14 +57,25 @@ export default function Tasks() {
   // Auto-complete wallet_connect task when wallet connects on this page
   useEffect(() => {
     if (!isConnected || !address || !telegramId || !walletTask) return;
-    completeTask.mutate({ telegramId, taskId: walletTask.id, data: {} }, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
-        queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
-        toast.success("✅ Wallet connected — task reward added!");
-      },
-      onError: () => { /* already completed, silently ignore */ },
-    });
+
+    const doComplete = () => {
+      completeTask.mutate({ telegramId, taskId: walletTask.id, data: {} }, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetUserTasksQueryKey(telegramId) });
+          queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(telegramId) });
+          toast.success("✅ Wallet connected — task reward added!");
+        },
+        onError: () => { /* already completed, silently ignore */ },
+      });
+    };
+
+    if (!user || user.walletAddress !== address) {
+      updateWallet.mutate({ telegramId, data: { walletAddress: address } }, {
+        onSuccess: doComplete,
+      });
+    } else {
+      doComplete();
+    }
   }, [isConnected, address, telegramId, walletTask?.id]);
 
   const handleCompleteTask = (taskId: number, taskType: string, actionUrl?: string | null) => {
