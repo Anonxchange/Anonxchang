@@ -14,7 +14,7 @@ const MAX_TIER_BONUS = 900_000;
 
 export default function Referral() {
   const { telegramId, user } = useTelegram();
-  const { data: stats, isLoading } = useGetReferralStats(telegramId, {
+  const { data: stats, isLoading, isError } = useGetReferralStats(telegramId, {
     query: {
       enabled: !!telegramId,
       queryKey: getGetReferralStatsQueryKey(telegramId),
@@ -29,18 +29,27 @@ export default function Referral() {
     toast.success("Referral link copied!");
   };
 
-  const qualified = stats?.qualifiedReferrals || 0;
+  const qualified = stats?.qualifiedReferrals ?? 0;
   const progress = Math.min((qualified / MAX_REFERRALS) * 100, 100);
   const earned = qualified * REWARD_PER_REFERRAL;
   const remaining = Math.max(0, MAX_TIER_BONUS - earned);
 
-  if (isLoading) {
+  if (!telegramId || isLoading) {
     return (
       <div className="flex flex-col gap-4 p-4 max-w-2xl mx-auto w-full">
         <Skeleton className="h-7 w-32" />
         <Skeleton className="h-40 w-full rounded-2xl" />
         <Skeleton className="h-28 w-full rounded-2xl" />
         <Skeleton className="h-48 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 p-8 text-center min-h-[60vh]">
+        <p className="text-muted-foreground text-sm">Could not load referral data.</p>
+        <p className="text-[11px] text-muted-foreground">Open this app through Telegram to see your referrals.</p>
       </div>
     );
   }
@@ -184,7 +193,7 @@ export default function Referral() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold truncate">{ref.firstName || ref.username || "Anonymous"}</div>
-                  <div className="text-[10px] text-muted-foreground">{new Date(ref.joinedAt).toLocaleDateString()}</div>
+                  <div className="text-[10px] text-muted-foreground">{ref.joinedAt ? new Date(ref.joinedAt).toLocaleDateString() : ""}</div>
                 </div>
                 {ref.hasClaimed ? (
                   <div className="flex flex-col items-end flex-shrink-0">

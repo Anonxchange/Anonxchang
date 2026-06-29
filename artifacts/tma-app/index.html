@@ -13,48 +13,83 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script>
       (function () {
-        // Pre-register Replit's custom elements as invisible no-ops before their script loads
-        ['replit-pill', 'replit-badge'].forEach(function (tag) {
+        var BADGE_TAGS = ['replit-pill', 'replit-badge'];
+        var BADGE_PATTERNS = ['replit-cdn.com', 'replit.com/badge', 'replit.com/public/images/replit'];
+
+        // Pre-register Replit custom elements as instant self-removing no-ops
+        BADGE_TAGS.forEach(function (tag) {
           if (!customElements.get(tag)) {
             customElements.define(tag, class extends HTMLElement {
-              connectedCallback() { this.remove(); }
+              connectedCallback() { this.style.cssText = 'display:none!important'; this.remove(); }
             });
           }
         });
 
-        // MutationObserver: remove any Replit badge/pill node the moment it's added
+        function isBadgeNode(node) {
+          if (!node || node.nodeType !== 1) return false;
+          var tag = (node.tagName || '').toLowerCase();
+          var src = node.src || node.href || '';
+          var cls = (node.className || '').toString();
+          var id = (node.id || '');
+          if (BADGE_TAGS.indexOf(tag) !== -1) return true;
+          if (id.toLowerCase().indexOf('replit') !== -1) return true;
+          if (cls.toLowerCase().indexOf('replit') !== -1) return true;
+          if (node.getAttribute('data-repl-id') !== null) return true;
+          if (node.getAttribute('data-referral-code') !== null) return true;
+          if (node.getAttribute('data-replit-badge') !== null) return true;
+          for (var i = 0; i < BADGE_PATTERNS.length; i++) {
+            if (src.indexOf(BADGE_PATTERNS[i]) !== -1) return true;
+          }
+          return false;
+        }
+
+        function nukeBadges(root) {
+          (root || document).querySelectorAll && (root || document).querySelectorAll(
+            'replit-badge,replit-pill,[data-repl-id],[data-replit-badge],iframe[src*="replit-cdn.com"],iframe[src*="replit.com/badge"]'
+          ).forEach(function(el) { el.remove(); });
+        }
+
+        // MutationObserver: kill any badge the instant it's added
         var observer = new MutationObserver(function (mutations) {
           mutations.forEach(function (mutation) {
             mutation.addedNodes.forEach(function (node) {
-              if (!node || node.nodeType !== 1) return;
-              var tag = (node.tagName || '').toLowerCase();
-              var src = node.src || '';
-              if (
-                tag === 'replit-pill' ||
-                tag === 'replit-badge' ||
-                src.indexOf('replit-cdn.com') !== -1 ||
-                node.getAttribute('data-referral-code') !== null ||
-                node.getAttribute('data-repl-id') !== null
-              ) {
-                node.remove();
-              }
+              if (isBadgeNode(node)) { node.remove(); return; }
+              // Also scan children of added subtrees
+              if (node.nodeType === 1) nukeBadges(node);
             });
           });
         });
         observer.observe(document.documentElement, { childList: true, subtree: true });
+
+        // Belt-and-suspenders: periodic sweep every 500ms for the first 10s
+        var sweepCount = 0;
+        var sweepInterval = setInterval(function () {
+          nukeBadges();
+          if (++sweepCount >= 20) clearInterval(sweepInterval);
+        }, 500);
       })();
     </script>
     <style>
       replit-pill,
       replit-badge,
       #replit-badge,
+      [id*="replit-badge"],
+      [class*="replit-badge"],
       [data-referral-code],
       [data-repl-id],
+      [data-replit-badge],
       iframe[src*="replit.com/badge"],
-      iframe[src*="replit-cdn.com"] {
+      iframe[src*="replit-cdn.com"],
+      iframe[src*="replit.com/public"] {
         display: none !important;
         visibility: hidden !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
         pointer-events: none !important;
+        position: absolute !important;
+        top: -9999px !important;
+        left: -9999px !important;
       }
     </style>
   </head>
