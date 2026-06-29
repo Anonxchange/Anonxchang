@@ -56,16 +56,32 @@ function WalletReconnect() {
   const { reconnect } = useReconnect()
 
   useEffect(() => {
+    // visibilitychange is the most reliable event in Telegram's WebView
     const onVisible = () => {
       if (document.visibilityState === 'visible') reconnect()
     }
+    // pageshow fires when the page is shown after returning from another app
+    const onPageShow = () => reconnect()
+    // focus as a fallback
     const onFocus = () => reconnect()
 
     document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onPageShow)
     window.addEventListener('focus', onFocus)
+
+    // Poll for 15 seconds after mount — catches Telegram WebView resume
+    // where none of the above events fire reliably on iOS
+    let polls = 0
+    const poll = setInterval(() => {
+      reconnect()
+      if (++polls >= 15) clearInterval(poll)
+    }, 1000)
+
     return () => {
       document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pageshow', onPageShow)
       window.removeEventListener('focus', onFocus)
+      clearInterval(poll)
     }
   }, [reconnect])
 
